@@ -36,7 +36,7 @@ posts.get('/rss', async (c) => {
 
   if (error) throw new AppError(500, 'RSS_GENERATION_FAILED', error.message)
 
-  const baseUrl = 'https://luxima.id'
+  const baseUrl = process.env.BASE_URL || 'https://blog.luxima.id'
   const rssItems = (latestPosts || []).map(post => `
     <item>
       <title><![CDATA[${post.title}]]></title>

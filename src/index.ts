@@ -63,6 +63,20 @@ app.use(
   })
 )
 
+// ── Root Route (Landing/Dashboard) ──────────────────────────
+app.get('/', async (c) => {
+  try {
+    const html = await Bun.file('index.html').text()
+    return c.html(html)
+  } catch (err) {
+    return c.json({
+      success: true,
+      message: 'LUXIMA Blog API is running',
+      docs: '/api/health'
+    })
+  }
+})
+
 // ── API Routes ──────────────────────────────────────────────
 
 const api = app.basePath('/api')
@@ -97,8 +111,8 @@ api.get('/sitemap.xml', async (c) => {
 
   const { data: posts } = await supabase.from('posts').select('slug, updated_at')
   const { data: categories } = await supabase.from('categories').select('slug')
-  
-  const baseUrl = 'https://luxima.id'
+
+  const baseUrl = process.env.BASE_URL || 'https://blog.luxima.id'
   const postUrls = (posts || []).map(p => `
     <url>
       <loc>${baseUrl}/blog/${p.slug}</loc>
@@ -134,10 +148,11 @@ api.get('/sitemap.xml', async (c) => {
 
 // Robots.txt
 api.get('/robots.txt', (c) => {
+  const baseUrl = process.env.BASE_URL || 'https://blog.luxima.id'
   const robots = `
 User-agent: *
 Allow: /
-Sitemap: https://luxima.id/api/sitemap.xml
+Sitemap: ${baseUrl}/api/sitemap.xml
 `.trim()
   return c.text(robots)
 })

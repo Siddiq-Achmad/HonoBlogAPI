@@ -9,14 +9,18 @@ import { successResponse } from '../lib/response.js'
 import { generateSlug } from '../lib/slug.js'
 import { authRequired } from '../middleware/auth.js'
 import { AppError } from '../middleware/error-handler.js'
+import { getCache, setCache, delCache } from '../lib/redis.js'
 import { CreateTagSchema, UpdateTagSchema } from '../schemas/tag.schema.js'
 import type { Env } from '../types/index.js'
 
 const tags = new Hono<Env>()
 
 // ── GET /tags ───────────────────────────────────────────────
-
 tags.get('/', async (c) => {
+  const cacheKey = 'tags:list'
+  const cachedData = await getCache<any>(cacheKey)
+  if (cachedData) return successResponse(c, cachedData)
+
   const { data, error } = await supabase
     .from('tags')
     .select('*')
@@ -24,6 +28,7 @@ tags.get('/', async (c) => {
 
   if (error) throw new AppError(500, 'DATABASE_ERROR', error.message)
 
+  await setCache(cacheKey, data || [], 3600) // Cache for 1 hour
   return successResponse(c, data || [])
 })
 
@@ -45,6 +50,7 @@ tags.post('/', authRequired, zValidator('json', CreateTagSchema), async (c) => {
 
   if (error) throw new AppError(500, 'CREATE_FAILED', error.message)
 
+  await delCache('tags:list')
   return successResponse(c, tag, 201)
 })
 
@@ -74,6 +80,7 @@ tags.put('/:id', authRequired, zValidator('json', UpdateTagSchema), async (c) =>
 
   if (error) throw new AppError(500, 'UPDATE_FAILED', error.message)
 
+  await delCache('tags:list')
   return successResponse(c, tag)
 })
 
@@ -93,6 +100,7 @@ tags.delete('/:id', authRequired, async (c) => {
 
   if (error) throw new AppError(500, 'DELETE_FAILED', error.message)
 
+  await delCache('tags:list')
   return successResponse(c, { message: 'Tag deleted successfully' })
 })
 
