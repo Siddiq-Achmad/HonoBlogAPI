@@ -63,6 +63,11 @@ app.use(
   })
 )
 
+import { serveStatic } from 'hono/bun'
+
+app.use('/src/*', serveStatic({ root: './' }))
+app.use('/favicon.ico', serveStatic({ path: './favicon.ico' }))
+
 // ── Root Route (Landing/Dashboard) ──────────────────────────
 app.get('/', async (c) => {
   try {
