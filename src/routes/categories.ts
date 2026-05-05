@@ -53,6 +53,9 @@ categories.get('/', async (c) => {
     })
   )
 
+  // Set cache for 1 hour
+  await setCache(cacheKey, categoriesWithCount, 3600)
+
   return successResponse(c, categoriesWithCount)
 })
 

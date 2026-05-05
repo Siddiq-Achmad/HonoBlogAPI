@@ -9,6 +9,7 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
 // Initialize Redis Client
 export const redis = new Redis(redisUrl, {
   maxRetriesPerRequest: 3,
+  keyPrefix: 'BLOG:', // Added prefix as requested
   retryStrategy(times: number) {
     const delay = Math.min(times * 50, 2000)
     return delay
@@ -22,6 +23,22 @@ export const redis = new Redis(redisUrl, {
     return false
   },
 })
+
+// ioredis evalsha signature: (sha, numKeys, ...keys, ...args)
+// hono-rate-limiter expects: (sha, keys[], args[])
+
+/**
+ * Compatibility wrapper for hono-rate-limiter
+ * ioredis doesn't have scriptLoad and has a different evalsha signature
+ */
+export const rateLimitClient = {
+  scriptLoad: (script: string) => redis.script('LOAD', script),
+  evalsha: (sha: string, keys: string[], args: any[]) => redis.evalsha(sha, keys.length, ...keys, ...args),
+  decr: (key: string) => redis.decr(key),
+  del: (key: string) => redis.del(key),
+  get: (key: string) => redis.get(key),
+  set: (key: string, value: string, ...args: any[]) => redis.set(key, value, ...args),
+}
 
 // Connection Event Handlers
 redis.on('connect', () => {

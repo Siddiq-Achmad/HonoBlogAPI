@@ -9,6 +9,7 @@ import { successResponse, paginatedResponse, errorResponse } from '../lib/respon
 import { generateSlug } from '../lib/slug.js'
 import { authRequired, authOptional } from '../middleware/auth.js'
 import { AppError } from '../middleware/error-handler.js'
+import { getCache, setCache, delCache } from '../lib/redis.js'
 import {
   CreatePostSchema,
   UpdatePostSchema,
@@ -19,8 +20,14 @@ import type { Env } from '../types/index.js'
 const posts = new Hono<Env>()
 
 // ── GET /posts/rss — RSS Feed generator ─────────────────────
-
 posts.get('/rss', async (c) => {
+  const cacheKey = 'rss:feed'
+  const cachedRss = await getCache<string>(cacheKey)
+  if (cachedRss) {
+    c.header('Content-Type', 'application/xml')
+    return c.body(cachedRss)
+  }
+
   const { data: latestPosts, error } = await supabase
     .from('posts')
     .select('*, author:profiles_view(fullName), category:categories(name)')
@@ -29,7 +36,7 @@ posts.get('/rss', async (c) => {
 
   if (error) throw new AppError(500, 'RSS_GENERATION_FAILED', error.message)
 
-  const baseUrl = 'https://luxima.id' // Sesuaikan dengan domain frontend Anda
+  const baseUrl = 'https://luxima.id'
   const rssItems = (latestPosts || []).map(post => `
     <item>
       <title><![CDATA[${post.title}]]></title>
@@ -52,7 +59,9 @@ posts.get('/rss', async (c) => {
         <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
         ${rssItems}
       </channel>
-    </rss>`
+    </rss>`.trim()
+
+  await setCache(cacheKey, rssFeed, 1800) // 30 minutes cache
 
   c.header('Content-Type', 'application/xml')
   return c.body(rssFeed)
@@ -61,6 +70,12 @@ posts.get('/rss', async (c) => {
 // ── GET /posts — List posts (public, paginated) ─────────────
 
 posts.get('/', zValidator('query', PostQuerySchema), async (c) => {
+  const queryParams = c.req.valid('query')
+  const cacheKey = `posts:list:${JSON.stringify(queryParams)}`
+  
+  const cachedData = await getCache<any>(cacheKey)
+  if (cachedData) return c.json(cachedData)
+
   const {
     page,
     limit,
@@ -69,7 +84,7 @@ posts.get('/', zValidator('query', PostQuerySchema), async (c) => {
     search,
     sort_by,
     order,
-  } = c.req.valid('query')
+  } = queryParams
 
   const offset = (page - 1) * limit
 
@@ -108,13 +123,27 @@ posts.get('/', zValidator('query', PostQuerySchema), async (c) => {
     throw new AppError(500, 'DATABASE_ERROR', error.message)
   }
 
-  return paginatedResponse(c, data || [], page, limit, count || 0)
+  const response = paginatedResponse(c, data || [], page, limit, count || 0)
+  // Cache for 5 minutes
+  await setCache(cacheKey, response, 300)
+  
+  return response
 })
 
 // ── GET /posts/:slug — Get single post by slug ──────────────
 
 posts.get('/:slug', async (c) => {
   const slug = c.req.param('slug')
+  const cacheKey = `post:slug:${slug}`
+
+  const cachedPost = await getCache<any>(cacheKey)
+  if (cachedPost) {
+    // Still increment views in background
+    supabaseAdmin.rpc('increment_post_views', { post_id: cachedPost.id }).then(({ error }) => {
+      if (error) console.error('Failed to increment views (cached):', error)
+    })
+    return successResponse(c, cachedPost)
+  }
 
   const { data: post, error } = await supabase
     .from('posts')
@@ -137,6 +166,7 @@ posts.get('/:slug', async (c) => {
     if (error) console.error('Failed to increment views:', error)
   })
 
+  await setCache(cacheKey, post, 600) // Cache for 10 minutes
   return successResponse(c, post)
 })
 
@@ -182,6 +212,11 @@ posts.post('/', authRequired, zValidator('json', CreatePostSchema), async (c) =>
   if (error) {
     throw new AppError(500, 'CREATE_FAILED', error.message)
   }
+
+  // Invalidate caches
+  await delCache('rss:feed')
+  await delCache('sitemap:xml')
+  // Note: we can't easily invalidate all paginated lists, but they have short TTL (5m)
 
   return successResponse(c, post, 201)
 })

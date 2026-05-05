@@ -9,13 +9,16 @@ import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 import { timing } from 'hono/timing'
 import { rateLimiter, RedisStore } from 'hono-rate-limiter'
+import { secureHeaders } from 'hono/secure-headers'
+import { compress } from 'hono/compress'
+import { etag } from 'hono/etag'
 
 import { notFoundHandler, globalErrorHandler } from './middleware/error-handler.js'
 import type { Env } from './types/index.js'
 
 // Route imports
 import { supabase } from './lib/supabase.js'
-import { redis } from './lib/redis.js'
+import { redis, getCache, setCache, rateLimitClient } from './lib/redis.js'
 import authRoutes from './routes/auth.js'
 import postRoutes from './routes/posts.js'
 import categoryRoutes from './routes/categories.js'
@@ -37,12 +40,15 @@ const limiter = rateLimiter({
   keyGenerator: (c) => c.req.header('x-forwarded-for') || 'anonymous',
   store: new RedisStore({
     // @ts-ignore
-    client: redis,
+    client: rateLimitClient,
     prefix: 'hono-rate-limit:',
   }),
 })
 
 app.use('*', limiter)
+app.use('*', secureHeaders())
+app.use('*', compress())
+app.use('*', etag())
 app.use('*', logger())
 app.use('*', prettyJSON())
 app.use('*', timing())
@@ -80,6 +86,15 @@ api.get('/health', async (c) => {
 
 // Sitemap Generator
 api.get('/sitemap.xml', async (c) => {
+  // Use caching for sitemap
+  const cacheKey = 'sitemap:xml'
+  const cachedSitemap = await getCache<string>(cacheKey)
+  if (cachedSitemap) {
+    c.header('Content-Type', 'application/xml')
+    c.header('Cache-Control', 'public, max-age=3600')
+    return c.body(cachedSitemap)
+  }
+
   const { data: posts } = await supabase.from('posts').select('slug, updated_at')
   const { data: categories } = await supabase.from('categories').select('slug')
   
@@ -108,10 +123,23 @@ api.get('/sitemap.xml', async (c) => {
       </url>
       ${postUrls}
       ${catUrls}
-    </urlset>`
+    </urlset>`.trim()
+
+  await setCache(cacheKey, sitemap, 3600) // Cache for 1 hour
 
   c.header('Content-Type', 'application/xml')
-  return c.body(sitemap.trim())
+  c.header('Cache-Control', 'public, max-age=3600')
+  return c.body(sitemap)
+})
+
+// Robots.txt
+api.get('/robots.txt', (c) => {
+  const robots = `
+User-agent: *
+Allow: /
+Sitemap: https://luxima.id/api/sitemap.xml
+`.trim()
+  return c.text(robots)
 })
 
 // ── Mount Routes ────────────────────────────────────────────

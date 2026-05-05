@@ -1,9 +1,9 @@
 {
   "name": "LUXIMA — Hono Blog API",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22-bullseye",
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:1": {
-      "configureZshAsDefaultShell": true
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
     }
   },
   "customizations": {
