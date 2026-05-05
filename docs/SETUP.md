@@ -1,128 +1,76 @@
-# 🛠️ Setup Guide — Hono Blog API
+# ⚙️ Setup & Deployment Guide
 
-Panduan lengkap untuk setup dan menjalankan Blog API dengan schema database Anda.
+Panduan lengkap untuk menginstal dan menjalankan **Hono Blog API** di lingkungan lokal maupun produksi.
 
----
+## 📋 Prasyarat
+- **Bun** (v1.0.0 atau lebih tinggi)
+- Akun **Supabase** (Cloud atau Self-hosted)
 
-## Prerequisites
+## 🛠️ Instalasi Lokal
 
-- **Node.js** ≥ 18.0.0
-- **npm** ≥ 9.0.0
-- **Supabase** account dengan project yang sudah dibuat
-
----
-
-## 1. Setup Supabase Database
-
-Jalankan SQL berikut di **Supabase SQL Editor** untuk membuat tabel sesuai spesifikasi Anda:
-
-```sql
--- ── Categories Table ────────────────────────────────────────
-
-CREATE TABLE public.categories (
-  name character varying NOT NULL,
-  slug character varying NOT NULL,
-  description text,
-  icon character varying,
-  parent_id uuid,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  sort_order integer DEFAULT 0,
-  status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying::text, 'inactive'::character varying::text])),
-  created_at timestamp with time zone DEFAULT now(),
-  image character varying,
-  CONSTRAINT categories_pkey PRIMARY KEY (id),
-  CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.categories(id)
-);
-
--- ── Profiles Table (Identity) ───────────────────────────────
--- Diasumsikan berada di schema public untuk aksesibilitas API
-
-CREATE TABLE public.profiles (
-  id uuid NOT NULL PRIMARY KEY,
-  full_name text,
-  avatar_url text,
-  username text UNIQUE,
-  updated_at timestamp with time zone DEFAULT now()
-);
-
--- ── Tags Table ──────────────────────────────────────────────
-
-CREATE TABLE public.tags (
-  name text,
-  slug text,
-  description text,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT tags_pkey PRIMARY KEY (id)
-);
-
--- ── Posts Table ─────────────────────────────────────────────
-
-CREATE TABLE public.posts (
-  title text,
-  slug text,
-  category_id uuid,
-  cover_image text,
-  description text,
-  content text,
-  reading_time_minutes integer,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  tags text[] DEFAULT '{}',
-  author_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-  CONSTRAINT posts_pkey PRIMARY KEY (id),
-  CONSTRAINT posts_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id)
-);
-
--- ── Comments Table ──────────────────────────────────────────
-
-CREATE TABLE public.comments (
-  post_id uuid NOT NULL,
-  user_id uuid NOT NULL,
-  content text NOT NULL,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT comments_pkey PRIMARY KEY (id),
-  CONSTRAINT comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.posts(id),
-  CONSTRAINT comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-
--- ── Indexes ─────────────────────────────────────────────────
-
-CREATE INDEX idx_posts_slug ON posts(slug);
-CREATE INDEX idx_categories_slug ON categories(slug);
-CREATE INDEX idx_tags_slug ON tags(slug);
+### 1. Kloning Repository
+```bash
+git clone https://github.com/Siddiq-Achmad/HonoBlogAPI.git
+cd HonoBlogAPI
 ```
 
----
-
-## 2. Environment Variables
-
-Salin `.env.example` menjadi `.env` dan isi dengan kredensial Supabase Anda.
+### 2. Konfigurasi Environment
+Buat file `.env` di root direktori:
 
 ```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-JWT_SECRET=your-supabase-jwt-secret
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+JWT_SECRET=your_supabase_jwt_secret
 PORT=3000
 NODE_ENV=development
 ```
 
----
+> **Catatan Self-Hosted**: Jika menggunakan self-hosted, pastikan URL mengarah ke domain/IP Kong gateway Anda (default port 8000).
 
-## 3. Menjalankan Server
-
+### 3. Instal Dependencies
 ```bash
-npm install
-npm run dev
+bun install
 ```
 
-API akan berjalan di `http://localhost:3000/api`.
+### 4. Database Setup (Supabase)
+Pastikan Anda sudah menjalankan SQL berikut di SQL Editor Supabase:
+- Tabel `categories`, `posts`, `comments`, `tags`.
+- View `profiles_view` pada schema `public`.
+- RLS Policy yang sesuai.
 
----
+Jalankan seed data awal:
+```bash
+bun run seed
+```
 
-## 4. Deployment
+### 5. Jalankan Development Server
+```bash
+bun run dev
+```
 
-Aplikasi ini siap di-deploy ke platform seperti **Railway**, **Render**, atau **VPS** menggunakan Node.js runtime. Pastikan semua environment variables di atas sudah dikonfigurasi di platform deployment Anda.
+## 🚀 Produksi
+
+### Membangun Frontend
+```bash
+bun run build
+```
+
+### Menjalankan Server
+Untuk produksi, gunakan:
+```bash
+bun run start
+```
+
+### Deployment (Railway/Render/Vercel)
+- Gunakan build command: `bun install && bun run build`
+- Start command: `bun run start`
+- Pastikan semua Environment Variables sudah didaftarkan di dashboard platform deployment.
+
+## 🔍 Troubleshooting
+
+### Error: Missing Environment Variables
+Pastikan Anda menjalankan perintah dengan Bun: `bun run dev`. Script kita menggunakan flag `--env-file=.env` secara otomatis jika didefinisikan di `package.json`.
+
+### Error: Database Disconnected
+Gunakan endpoint `/api/health` untuk melihat detail error koneksi ke Supabase. Periksa apakah `SUPABASE_URL` dapat dijangkau dari server API.

@@ -1,6 +1,7 @@
 # 📚 Blog API — Dokumentasi API Lengkap
 
 > **Base URL**: `http://localhost:3000/api`
+> **Rate Limit**: 100 requests / 15 minutes per IP.
 
 ---
 
@@ -15,7 +16,8 @@
 
 ### 📝 Posts
 - `GET /posts`: List semua post (Paginated).
-  - Query: `page`, `limit`, `category_id`, `search`, `sort_by`, `order`.
+  - Query: `page`, `limit`, `category_id`, `tag`, `search`, `sort_by`, `order`.
+  - Filter `tag`: Mencari postingan yang mengandung tag tertentu.
 - `GET /posts/:slug`: Detail post berdasarkan slug.
 - `POST /posts`: Buat post baru (Auth Required).
   - Body: `title`, `content`, `description`, `category_id`, `cover_image`, `reading_time_minutes`, `tags` (Array).
@@ -43,14 +45,17 @@
   - Body (Multipart): `file` (Image), `bucket` (Optional, default: `blog-assets`).
   - Response: `{ "url": "...", "path": "...", "fileName": "..." }`.
 
+### ⚡ System
+- `GET /health`: Health check sistem & konektivitas database.
+  - Menampilkan status `database: connected/disconnected`.
+
 ---
 
 ## 🏗️ Struktur Data Profiles (View)
 Data profil penulis dan user menggunakan `profiles_view` dengan kolom berikut:
 - `id`, `email`, `fullName`, `username`, `avatar`, `bio`, `website`, `status`, `createdAt`, dll.
 
----
-
-## 💡 Catatan Implementasi
-1. **Security**: Pastikan Anda telah membuat Bucket bernama `blog-assets` di Supabase Storage dan mengaturnya menjadi **Public** agar URL gambar bisa diakses.
-2. **Auth**: Gunakan Bearer Token (`Authorization: Bearer <token>`) untuk semua endpoint yang membutuhkan autentikasi.
+## 🛡️ Keamanan
+- **Rate Limiting**: Diterapkan secara global untuk mencegah spam.
+- **CORS**: Diizinkan untuk semua origin (konfigurasi di `index.ts`).
+- **Auth**: Menggunakan JWT yang divalidasi terhadap `profiles_view`.

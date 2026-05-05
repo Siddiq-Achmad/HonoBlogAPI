@@ -4,6 +4,7 @@
 
 import { createMiddleware } from 'hono/factory'
 import { jwt } from 'hono/jwt'
+import { getCookie } from 'hono/cookie'
 import type { Env, AuthUser } from '../types/index.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || ''
@@ -18,21 +19,27 @@ const JWT_SECRET = process.env.JWT_SECRET || ''
  */
 export const authRequired = createMiddleware<Env>(async (c, next) => {
   const authHeader = c.req.header('Authorization')
+  let token: string | undefined
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.replace('Bearer ', '')
+  } else {
+    // Fallback to cookie
+    token = getCookie(c, 'sb-luxima-auth-token')
+  }
+
+  if (!token) {
     return c.json(
       {
         success: false,
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Missing or invalid Authorization header. Expected: Bearer <token>',
+          message: 'Missing token in Authorization header or sb-luxima-auth-token cookie.',
         },
       },
       401
     )
   }
-
-  const token = authHeader.replace('Bearer ', '')
 
   try {
     // Verify JWT using Hono's built-in JWT verification
@@ -74,8 +81,15 @@ export const authRequired = createMiddleware<Env>(async (c, next) => {
  */
 export const authOptional = createMiddleware<Env>(async (c, next) => {
   const authHeader = c.req.header('Authorization')
+  let token: string | undefined
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.replace('Bearer ', '')
+  } else {
+    token = getCookie(c, 'sb-luxima-auth-token')
+  }
+
+  if (!token) {
     c.set('user', null)
     await next()
     return

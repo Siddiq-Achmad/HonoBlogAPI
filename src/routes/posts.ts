@@ -18,6 +18,46 @@ import type { Env } from '../types/index.js'
 
 const posts = new Hono<Env>()
 
+// ── GET /posts/rss — RSS Feed generator ─────────────────────
+
+posts.get('/rss', async (c) => {
+  const { data: latestPosts, error } = await supabase
+    .from('posts')
+    .select('*, author:profiles_view(fullName), category:categories(name)')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (error) throw new AppError(500, 'RSS_GENERATION_FAILED', error.message)
+
+  const baseUrl = 'https://luxima.id' // Sesuaikan dengan domain frontend Anda
+  const rssItems = (latestPosts || []).map(post => `
+    <item>
+      <title><![CDATA[${post.title}]]></title>
+      <link>${baseUrl}/blog/${post.slug}</link>
+      <guid isPermaLink="true">${baseUrl}/blog/${post.slug}</guid>
+      <pubDate>${new Date(post.created_at).toUTCString()}</pubDate>
+      <description><![CDATA[${post.description || ''}]]></description>
+      <category>${post.category?.name || 'General'}</category>
+      <author>${post.author?.fullName || 'LUXIMA'}</author>
+    </item>
+  `).join('')
+
+  const rssFeed = `<?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0" xmlns:atom="http://www.w3.org/2007/Atom">
+      <channel>
+        <title>LUXIMA Blog</title>
+        <link>${baseUrl}</link>
+        <description>Elite content from LUXIMA infrastructure.</description>
+        <language>en-us</language>
+        <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+        ${rssItems}
+      </channel>
+    </rss>`
+
+  c.header('Content-Type', 'application/xml')
+  return c.body(rssFeed)
+})
+
 // ── GET /posts — List posts (public, paginated) ─────────────
 
 posts.get('/', zValidator('query', PostQuerySchema), async (c) => {
@@ -91,6 +131,11 @@ posts.get('/:slug', async (c) => {
   if (error || !post) {
     throw new AppError(404, 'POST_NOT_FOUND', `Post with slug "${slug}" not found`)
   }
+
+  // Increment views in the background
+  supabaseAdmin.rpc('increment_post_views', { post_id: post.id }).then(({ error }) => {
+    if (error) console.error('Failed to increment views:', error)
+  })
 
   return successResponse(c, post)
 })

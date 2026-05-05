@@ -1,92 +1,52 @@
-# 🔥 Hono Blog API
+# 💎 LUXIMA — Hono Blog API
 
-RESTful Blog API yang production-ready, dibangun dengan **Hono** dan **Supabase**.
+Elite, high-performance RESTful Blog API built with **Bun**, **Hono**, and **Supabase**. Featuring a premium management dashboard with **TailwindCSS v4** and the **LUXIMA Design System**.
 
-> Ultrafast • Type-safe • Siap digunakan oleh aplikasi frontend manapun
-
-## ✨ Fitur
-
-- 🚀 **Ultrafast** — Hono framework berbasis Web Standards
-- 🔐 **Authentication** — Supabase Auth dengan JWT validation
-- 📝 **Full CRUD** — Posts, Categories, Tags, Comments
-- 🔍 **Search & Filter** — Full-text search, category/tag filtering
-- 📄 **Pagination** — Cursor-based dengan metadata lengkap
-- ✅ **Validation** — Request validation dengan Zod
-- 🛡️ **Error Handling** — Consistent error response format
-- 📊 **Logging** — Request/response logging built-in
+## 🚀 Features
+- **Ultra Fast**: Powered by Bun native fetch and Hono.
+- **Redis Caching**: High-performance response caching for categories and posts.
+- **Distributed Rate Limiting**: Persistent request limiting using Redis.
+- **Elite Dashboard**: Light, airy, and aesthetic admin interface.
+- **SEO Optimized**: Automatic RSS 2.0 Feed and Sitemap.xml generation.
+- **Self-Hosted Ready**: Optimized for Coolify, Railway, and private VPS.
+- **Smart Auth**: Cookie-based authentication (`sb-luxima-auth-token`) for seamless SSO.
+- **Robust Storage**: Optimized avatar management with auto-sync to profiles.
 
 ## 🛠️ Tech Stack
+- **Runtime**: [Bun](https://bun.sh)
+- **Framework**: [Hono](https://hono.dev)
+- **Database**: [Supabase](https://supabase.com) (PostgreSQL)
+- **Cache & Limits**: [Redis](https://redis.io) (ioredis)
+- **Styling**: [TailwindCSS v4](https://tailwindcss.com)
+- **Validation**: [Zod](https://zod.dev)
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | [Hono](https://hono.dev) |
-| Runtime | Node.js |
-| Database | [Supabase](https://supabase.com) (PostgreSQL) |
-| Auth | Supabase Auth + JWT |
-| Validation | Zod |
-| Language | TypeScript |
+## 🏁 Quick Start
 
-## 🚀 Quick Start
-
+1. **Install Dependencies**
 ```bash
-# Clone the repo
-git clone <repo-url>
-cd HonoBlogAPI
+bun install
+```
 
-# Install dependencies
-npm install
-
-# Copy environment variables
+2. **Environment Setup**
+```bash
 cp .env.example .env
-# Edit .env with your Supabase credentials
-
-# Run in development mode
-npm run dev
 ```
 
-The API will be available at `http://localhost:3000/api`.
-
-## 📂 Project Structure
-
+3. **Database Seeding**
+```bash
+bun run seed
 ```
-src/
-├── index.ts              # Entry point & server setup
-├── lib/
-│   ├── supabase.ts       # Supabase client instances
-│   ├── response.ts       # Standardized response helpers
-│   └── slug.ts           # URL slug generator
-├── middleware/
-│   ├── auth.ts           # JWT authentication middleware
-│   └── error-handler.ts  # Global error handler
-├── schemas/
-│   ├── post.schema.ts    # Post validation schemas
-│   ├── category.schema.ts
-│   ├── tag.schema.ts
-│   └── comment.schema.ts
-├── routes/
-│   ├── auth.ts           # Auth endpoints
-│   ├── posts.ts          # Post CRUD endpoints
-│   ├── categories.ts     # Category CRUD endpoints
-│   ├── tags.ts           # Tag CRUD endpoints
-│   └── comments.ts       # Comment endpoints
-└── types/
-    └── index.ts          # TypeScript type definitions
+
+4. **Development Mode**
+```bash
+bun run dev
 ```
 
 ## 📚 Documentation
+- [📘 API Specification](docs/API.md) - Endpoint details & parameters.
+- [⚙️ Setup & Deployment](docs/SETUP.md) - General installation guide.
+- [🚀 Coolify Deployment](docs/COOLIFY_DEPLOY.md) - Specific guide for Coolify.
+- [💎 Design System Rules](docs/DESIGN_RULES.md) - LUXIMA aesthetic guidelines.
 
-- [API Reference](./docs/API.md) — Dokumentasi endpoint lengkap
-- [Setup Guide](./docs/SETUP.md) — Panduan setup dan deployment
-
-## 📜 Scripts
-
-| Script | Description |
-|--------|------------|
-| `npm run dev` | Start development server dengan hot-reload |
-| `npm run build` | Build TypeScript ke JavaScript |
-| `npm start` | Start production server |
-| `npm test` | Run tests |
-
-## 📄 License
-
-MIT
+## ⚖️ License
+MIT &copy; 2026 Siddiq Achmad. Built for Elite Performance.

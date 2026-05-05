@@ -5,6 +5,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { supabase, supabaseAdmin } from '../lib/supabase.js'
+import { redis, getCache, setCache, delCache } from '../lib/redis.js'
 import { successResponse } from '../lib/response.js'
 import { generateSlug } from '../lib/slug.js'
 import { authRequired } from '../middleware/auth.js'
@@ -20,6 +21,14 @@ const categories = new Hono<Env>()
 // ── GET /categories — List all categories ───────────────────
 
 categories.get('/', async (c) => {
+  const cacheKey = 'api:categories:all'
+  
+  // Try to get from Redis cache
+  const cachedData = await getCache<any[]>(cacheKey)
+  if (cachedData) {
+    return successResponse(c, cachedData)
+  }
+
   const { data, error } = await supabase
     .from('categories')
     .select('*')
@@ -216,6 +225,9 @@ categories.delete('/:id', authRequired, async (c) => {
   if (error) {
     throw new AppError(500, 'DELETE_FAILED', error.message)
   }
+
+  // Invalidate categories cache
+  await delCache('api:categories:all')
 
   return successResponse(c, { message: 'Category deleted successfully' })
 })

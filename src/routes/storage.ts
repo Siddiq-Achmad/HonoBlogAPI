@@ -58,4 +58,54 @@ storage.post('/upload', authRequired, async (c) => {
   })
 })
 
+/**
+ * POST /storage/avatar
+ * Specific endpoint for profile pictures
+ * Automatically updates the user's profile table
+ */
+storage.post('/avatar', authRequired, async (c) => {
+  const user = c.get('user')!
+  const body = await c.req.parseBody()
+  const file = body['file'] as File
+
+  if (!file || !file.type.startsWith('image/')) {
+    throw new AppError(400, 'INVALID_FILE', 'Please provide a valid image file')
+  }
+
+  // Use a fixed name per user to overwrite old avatars
+  const fileExt = file.name.split('.').pop() || 'jpg'
+  const fileName = `${user.id}/avatar.${fileExt}`
+
+  // Upload to 'avatars' bucket
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from('avatars')
+    .upload(fileName, file, {
+      contentType: file.type,
+      upsert: true
+    })
+
+  if (uploadError) {
+    throw new AppError(500, 'UPLOAD_FAILED', uploadError.message)
+  }
+
+  // Get public URL
+  const { data: { publicUrl } } = supabaseAdmin.storage
+    .from('avatars')
+    .getPublicUrl(fileName)
+
+  // Update profiles table
+  const { error: dbError } = await supabaseAdmin
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('id', user.id)
+
+  if (dbError) {
+    throw new AppError(500, 'DATABASE_ERROR', 'Avatar uploaded but failed to update profile data')
+  }
+
+  return successResponse(c, {
+    avatar: publicUrl
+  })
+})
+
 export default storage

@@ -8,12 +8,14 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 import { timing } from 'hono/timing'
-import { rateLimiter } from 'hono-rate-limiter'
+import { rateLimiter, RedisStore } from 'hono-rate-limiter'
 
 import { notFoundHandler, globalErrorHandler } from './middleware/error-handler.js'
 import type { Env } from './types/index.js'
 
+// Route imports
 import { supabase } from './lib/supabase.js'
+import { redis } from './lib/redis.js'
 import authRoutes from './routes/auth.js'
 import postRoutes from './routes/posts.js'
 import categoryRoutes from './routes/categories.js'
@@ -27,12 +29,17 @@ const app = new Hono<Env>()
 
 // ── Global Middleware ───────────────────────────────────────
 
-// Rate Limiting: 100 requests per 15 minutes
+// Redis-backed Rate Limiting
 const limiter = rateLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 100,
   standardHeaders: 'draft-6',
   keyGenerator: (c) => c.req.header('x-forwarded-for') || 'anonymous',
+  store: new RedisStore({
+    // @ts-ignore
+    client: redis,
+    prefix: 'hono-rate-limit:',
+  }),
 })
 
 app.use('*', limiter)
@@ -50,12 +57,12 @@ app.use(
   })
 )
 
-// ── Health Check ────────────────────────────────────────────
+// ── API Routes ──────────────────────────────────────────────
 
 const api = app.basePath('/api')
 
+// Health Check
 api.get('/health', async (c) => {
-  // Check Supabase Connectivity
   const { error } = await supabase.from('categories').select('id', { count: 'estimated', head: true }).limit(1)
   const isDbHealthy = !error
 
@@ -69,6 +76,42 @@ api.get('/health', async (c) => {
       version: '1.0.2',
     },
   })
+})
+
+// Sitemap Generator
+api.get('/sitemap.xml', async (c) => {
+  const { data: posts } = await supabase.from('posts').select('slug, updated_at')
+  const { data: categories } = await supabase.from('categories').select('slug')
+  
+  const baseUrl = 'https://luxima.id'
+  const postUrls = (posts || []).map(p => `
+    <url>
+      <loc>${baseUrl}/blog/${p.slug}</loc>
+      <lastmod>${new Date(p.updated_at).toISOString()}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>`).join('')
+
+  const catUrls = (categories || []).map(c => `
+    <url>
+      <loc>${baseUrl}/categories/${c.slug}</loc>
+      <changefreq>monthly</changefreq>
+      <priority>0.5</priority>
+    </url>`).join('')
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>${baseUrl}</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+      </url>
+      ${postUrls}
+      ${catUrls}
+    </urlset>`
+
+  c.header('Content-Type', 'application/xml')
+  return c.body(sitemap.trim())
 })
 
 // ── Mount Routes ────────────────────────────────────────────
