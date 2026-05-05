@@ -1,0 +1,247 @@
+// ============================================================
+// Posts Routes — Full CRUD with pagination, search, filtering
+// ============================================================
+
+import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { supabase, supabaseAdmin } from '../lib/supabase.js'
+import { successResponse, paginatedResponse, errorResponse } from '../lib/response.js'
+import { generateSlug } from '../lib/slug.js'
+import { authRequired, authOptional } from '../middleware/auth.js'
+import { AppError } from '../middleware/error-handler.js'
+import {
+  CreatePostSchema,
+  UpdatePostSchema,
+  PostQuerySchema,
+} from '../schemas/post.schema.js'
+import type { Env } from '../types/index.js'
+
+const posts = new Hono<Env>()
+
+// ── GET /posts — List posts (public, paginated) ─────────────
+
+posts.get('/', zValidator('query', PostQuerySchema), async (c) => {
+  const {
+    page,
+    limit,
+    category_id,
+    tag,
+    search,
+    sort_by,
+    order,
+  } = c.req.valid('query')
+
+  const offset = (page - 1) * limit
+
+  // Build the base query
+  let query = supabase
+    .from('posts')
+    .select(
+      `
+      *,
+      author:profiles_view(id, fullName, avatar),
+      category:categories(id, name, slug)
+    `,
+      { count: 'exact' }
+    )
+
+  if (category_id) {
+    query = query.eq('category_id', category_id)
+  }
+
+  if (tag) {
+    query = query.contains('tags', [tag])
+  }
+
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,content.ilike.%${search}%`)
+  }
+
+  // Apply sorting and pagination
+  query = query
+    .order(sort_by, { ascending: order === 'asc' })
+    .range(offset, offset + limit - 1)
+
+  const { data, error, count } = await query
+
+  if (error) {
+    throw new AppError(500, 'DATABASE_ERROR', error.message)
+  }
+
+  return paginatedResponse(c, data || [], page, limit, count || 0)
+})
+
+// ── GET /posts/:slug — Get single post by slug ──────────────
+
+posts.get('/:slug', async (c) => {
+  const slug = c.req.param('slug')
+
+  const { data: post, error } = await supabase
+    .from('posts')
+    .select(
+      `
+      *,
+      author:profiles_view(id, fullName, avatar, username),
+      category:categories(id, name, slug)
+    `
+    )
+    .eq('slug', slug)
+    .single()
+
+  if (error || !post) {
+    throw new AppError(404, 'POST_NOT_FOUND', `Post with slug "${slug}" not found`)
+  }
+
+  return successResponse(c, post)
+})
+
+// ── POST /posts — Create new post ───────────────────────────
+
+posts.post('/', authRequired, zValidator('json', CreatePostSchema), async (c) => {
+  const user = c.get('user')!
+  const body = c.req.valid('json')
+
+  // Generate slug from title
+  const slug = generateSlug(body.title)
+
+  // Check if slug already exists
+  const { data: existing } = await supabase
+    .from('posts')
+    .select('id')
+    .eq('slug', slug)
+    .single()
+
+  const finalSlug = existing
+    ? `${slug}-${Date.now().toString(36)}`
+    : slug
+
+  // Insert the post
+  const { data: post, error } = await supabaseAdmin
+    .from('posts')
+    .insert({
+      ...body,
+      slug: finalSlug,
+      author_id: user.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select(
+      `
+      *,
+      author:profiles_view(id, fullName, avatar),
+      category:categories(id, name, slug)
+    `
+    )
+    .single()
+
+  if (error) {
+    throw new AppError(500, 'CREATE_FAILED', error.message)
+  }
+
+  return successResponse(c, post, 201)
+})
+
+// ── PUT /posts/:id — Update post (author only) ──────────────
+
+posts.put(
+  '/:id',
+  authRequired,
+  zValidator('json', UpdatePostSchema),
+  async (c) => {
+    const user = c.get('user')!
+    const postId = c.req.param('id')
+    const updateData = c.req.valid('json')
+
+    // Verify post exists and user is the author
+    const { data: existingPost, error: findError } = await supabase
+      .from('posts')
+      .select('id, author_id')
+      .eq('id', postId)
+      .single()
+
+    if (findError || !existingPost) {
+      throw new AppError(404, 'POST_NOT_FOUND', 'Post not found')
+    }
+
+    if (existingPost.author_id !== user.id) {
+      throw new AppError(403, 'FORBIDDEN', 'You can only edit your own posts')
+    }
+
+    // If title is being updated, regenerate slug
+    if (updateData.title) {
+      const newSlug = generateSlug(updateData.title)
+      const { data: slugExists } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('slug', newSlug)
+        .neq('id', postId)
+        .single()
+
+      ;(updateData as any).slug = slugExists
+        ? `${newSlug}-${Date.now().toString(36)}`
+        : newSlug
+    }
+
+    // Update the post
+    const { data: updatedPost, error: updateError } = await supabaseAdmin
+      .from('posts')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', postId)
+      .select(
+        `
+        *,
+        author:profiles_view(id, fullName, avatar),
+        category:categories(id, name, slug)
+      `
+      )
+      .single()
+
+    if (updateError) {
+      throw new AppError(500, 'UPDATE_FAILED', updateError.message)
+    }
+
+    return successResponse(c, updatedPost)
+  }
+)
+
+// ── DELETE /posts/:id — Delete post (author only) ───────────
+
+posts.delete('/:id', authRequired, async (c) => {
+  const user = c.get('user')!
+  const postId = c.req.param('id')
+
+  // Verify post exists and user is the author
+  const { data: existingPost, error: findError } = await supabase
+    .from('posts')
+    .select('id, author_id')
+    .eq('id', postId)
+    .single()
+
+  if (findError || !existingPost) {
+    throw new AppError(404, 'POST_NOT_FOUND', 'Post not found')
+  }
+
+  if (existingPost.author_id !== user.id) {
+    throw new AppError(403, 'FORBIDDEN', 'You can only delete your own posts')
+  }
+
+  // Delete related comments
+  await supabaseAdmin.from('comments').delete().eq('post_id', postId)
+
+  // Delete the post
+  const { error: deleteError } = await supabaseAdmin
+    .from('posts')
+    .delete()
+    .eq('id', postId)
+
+  if (deleteError) {
+    throw new AppError(500, 'DELETE_FAILED', deleteError.message)
+  }
+
+  return successResponse(c, { message: 'Post deleted successfully' })
+})
+
+export default posts
