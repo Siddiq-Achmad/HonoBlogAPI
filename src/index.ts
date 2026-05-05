@@ -15,6 +15,7 @@ import { etag } from 'hono/etag'
 
 import { notFoundHandler, globalErrorHandler } from './middleware/error-handler.js'
 import type { Env } from './types/index.js'
+import { readFile } from 'node:fs/promises'
 
 // Route imports
 import { supabase } from './lib/supabase.js'
@@ -63,15 +64,17 @@ app.use(
   })
 )
 
-import { serveStatic } from 'hono/bun'
-
-app.use('/src/*', serveStatic({ root: './' }))
-app.use('/favicon.ico', serveStatic({ path: './favicon.ico' }))
+// ── Static Files ───────────────────────────────────────────
+if (typeof Bun !== 'undefined') {
+  const { serveStatic } = await import('hono/bun')
+  app.use('/src/*', serveStatic({ root: './' }))
+  app.use('/favicon.ico', serveStatic({ path: './favicon.ico' }))
+}
 
 // ── Root Route (Landing/Dashboard) ──────────────────────────
 app.get('/', async (c) => {
   try {
-    const html = await Bun.file('index.html').text()
+    const html = await readFile('./index.html', 'utf-8')
     return c.html(html)
   } catch (err) {
     return c.json({
