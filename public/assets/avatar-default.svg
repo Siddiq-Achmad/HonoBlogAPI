@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="mGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1A1A" />
+      <stop offset="100%" stop-color="#2D2820" />
+    </linearGradient>
+    <linearGradient id="goldAcc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#DFD0B8" />
+      <stop offset="50%" stop-color="#C5A880" />
+      <stop offset="100%" stop-color="#87693B" />
+    </linearGradient>
+  </defs>
+
+  <circle cx="60" cy="60" r="58" fill="url(#mGrad)" stroke="url(#goldAcc)" stroke-width="2" />
+  <circle cx="60" cy="60" r="53" fill="none" stroke="url(#goldAcc)" stroke-width="0.75" stroke-dasharray="2 2" opacity="0.5" />
+
+  <!-- Monogram Letter L in Cormorant Serif Style -->
+  <text x="60" y="74" font-family="'Cormorant Garamond', Georgia, serif" font-size="46" font-weight="600" fill="url(#goldAcc)" text-anchor="middle" letter-spacing="1">L</text>
+</svg>

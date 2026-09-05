@@ -47,7 +47,21 @@ const limiter = rateLimiter({
 })
 
 app.use('*', limiter)
-app.use('*', secureHeaders())
+app.use('*', secureHeaders({
+  contentSecurityPolicy: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+    imgSrc: ["'self'", "data:", "blob:", "https://images.unsplash.com", "https://*.supabase.co"],
+    connectSrc: ["'self'", "https://*.supabase.co", "https://auth.luxima.id"],
+    frameAncestors: ["'none'"],
+  },
+  xFrameOptions: 'DENY',
+  xContentTypeOptions: 'nosniff',
+  strictTransportSecurity: 'max-age=31536000; includeSubDomains',
+  referrerPolicy: 'strict-origin-when-cross-origin',
+}))
 app.use('*', compress())
 app.use('*', etag())
 app.use('*', logger())
@@ -56,9 +70,21 @@ app.use('*', timing())
 app.use(
   '*',
   cors({
-    origin: '*',
+    origin: (origin) => {
+      if (!origin) return 'https://luxima.id';
+      if (
+        origin.endsWith('.luxima.id') ||
+        origin.endsWith('.awedz.id') ||
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:')
+      ) {
+        return origin;
+      }
+      return 'https://luxima.id';
+    },
+    credentials: true,
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     exposeHeaders: ['X-Total-Count'],
     maxAge: 86400,
   })
@@ -71,19 +97,14 @@ if (typeof Bun !== 'undefined') {
   app.use('/favicon.ico', serveStatic({ path: './favicon.ico' }))
 }
 
-// ── Root Route (Landing/Dashboard) ──────────────────────────
-app.get('/', async (c) => {
-  try {
-    const html = await readFile('./index.html', 'utf-8')
-    return c.html(html)
-  } catch (err) {
-    return c.json({
-      success: true,
-      message: 'LUXIMA Blog API is running',
-      docs: '/api/health'
-    })
-  }
-})
+// ── Backend API Root Route ──────────────────────────────────
+app.get('/', (c) => c.json({
+  success: true,
+  service: 'LUXIMA Editorial & Magazine API',
+  version: '1.0.2',
+  engine: 'Astro v7 + Hono v4.7',
+  health: '/api/health'
+}))
 
 // ── API Routes ──────────────────────────────────────────────
 
@@ -120,10 +141,22 @@ api.get('/sitemap.xml', async (c) => {
   const { data: posts } = await supabase.from('posts').select('slug, updated_at')
   const { data: categories } = await supabase.from('categories').select('slug')
 
+  const escapeXml = (unsafe: string) => 
+    String(unsafe || '').replace(/[<>&'"]/g, (c) => {
+      switch (c) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case "'": return '&apos;';
+        case '"': return '&quot;';
+        default: return c;
+      }
+    });
+
   const baseUrl = process.env.BASE_URL || 'https://blog.luxima.id'
   const postUrls = (posts || []).map(p => `
     <url>
-      <loc>${baseUrl}/blog/${p.slug}</loc>
+      <loc>${baseUrl}/blog/${escapeXml(p.slug)}</loc>
       <lastmod>${new Date(p.updated_at).toISOString()}</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
@@ -131,7 +164,7 @@ api.get('/sitemap.xml', async (c) => {
 
   const catUrls = (categories || []).map(c => `
     <url>
-      <loc>${baseUrl}/categories/${c.slug}</loc>
+      <loc>${baseUrl}/categories/${escapeXml(c.slug)}</loc>
       <changefreq>monthly</changefreq>
       <priority>0.5</priority>
     </url>`).join('')
@@ -185,3 +218,5 @@ export default {
   port: Number(process.env.PORT) || 3000,
   fetch: app.fetch,
 }
+
+export { app }

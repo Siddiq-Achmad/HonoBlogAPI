@@ -1,6 +1,270 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Urbanist:wght@200;300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --primary-gold: #a88857;
+  --primary-gold-light: #c5a880;
+  --primary-gold-dark: #87693b;
+  --cream-bg: #FAF9F6;
+  --cream-card: #FFFFFF;
+}
+
+/* Base Setting */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: 'Urbanist', sans-serif;
+  font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--cream-bg);
+  color: #262626;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Luxury Editorial Typography */
+.font-editorial {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* Strictly Upright Rule */
+.font-upright {
+  font-style: normal !important;
+}
+
+/* Reading Progress Bar */
+#reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #c5a880, #a88857, #87693b);
+  z-index: 100;
+  transition: width 0.1s ease-out;
+  width: 0%;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px -10px rgba(168, 136, 87, 0.08), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+.glass-nav {
+  background: rgba(250, 249, 246, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(168, 136, 87, 0.15);
+}
+
+.glass-gold {
+  background: rgba(168, 136, 87, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 136, 87, 0.22);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(168, 136, 87, 0.4);
+  box-shadow: 0 20px 35px -10px rgba(168, 136, 87, 0.14), 0 8px 12px -3px rgba(0, 0, 0, 0.03);
+}
+
+/* Gold Gradient Accents */
+.gold-gradient {
+  background: linear-gradient(135deg, #c5a880 0%, #a88857 50%, #87693b 100%);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #b8935c 0%, #a88857 50%, #7d5e30 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-border {
+  border-color: rgba(168, 136, 87, 0.25);
+}
+
+/* Ambient Floating Lighting */
+@keyframes ambientFloat {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(20px, -20px) scale(1.05);
+  }
+}
+
+.animate-ambient {
+  animation: ambientFloat 14s ease-in-out infinite;
+}
+
+.animate-ambient-delay {
+  animation: ambientFloat 18s ease-in-out 3s infinite reverse;
+}
+
+/* Dropcap for Magazine Articles */
+.editorial-dropcap::first-letter {
+  float: left;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 4.6rem;
+  line-height: 0.82;
+  padding-top: 4px;
+  padding-right: 12px;
+  padding-bottom: 2px;
+  color: var(--primary-gold);
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Pull Quotes */
+.editorial-pullquote {
+  position: relative;
+  padding: 1.75rem 2rem 1.75rem 2.5rem;
+  margin: 2.5rem 0;
+  border-left: 3px solid var(--primary-gold);
+  background: linear-gradient(90deg, rgba(168, 136, 87, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 0 1rem 1rem 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.55rem;
+  line-height: 1.45;
+  color: #1a1a1a;
+}
+
+.editorial-pullquote::before {
+  content: '“';
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  font-size: 3rem;
+  color: rgba(168, 136, 87, 0.25);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  line-height: 1;
+}
+
+/* Dual-Page Magazine Spread */
+.magazine-spread {
+  position: relative;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.12);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.magazine-spread-gutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.06) 0%, rgba(168, 136, 87, 0.2) 50%, rgba(0, 0, 0, 0.06) 100%);
+  transform: translateX(-50%);
+  z-index: 10;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Page View Animation */
+.view-container {
+  animation: fadeInView 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInView {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shimmer Skeleton Loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0ede6 25%, #faf8f5 37%, #f0ede6 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Luxury Scrollbar */
+.luxury-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.luxury-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.luxury-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(168, 136, 87, 0.25);
+  border-radius: 9999px;
+}
+
+.luxury-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 136, 87, 0.5);
+}
+
+/* Button & Link Micro-Interactions */
+.btn-luxury {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-luxury:hover {
+  transform: scale(1.02);
+}
+
+.btn-luxury:active {
+  transform: scale(0.97);
+}
+
+/* Image Zoom on hover */
+.img-zoom-container {
+  overflow: hidden;
+}
+
+.img-zoom-container img {
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.img-zoom-container:hover img {
+  transform: scale(1.06);
 }
 
 .endpoint-card {
@@ -9,4 +273,292 @@ body {
 
 .endpoint-card:hover {
   transform: translateY(-4px);
+}
+
+
+/* ============================================================ */
+/* LENIS SMOOTH SCROLL STYLES (Awwwards Standard)              */
+/* ============================================================ */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* ============================================================ */
+/* LUXURY CUSTOM CURSOR                                         */
+/* ============================================================ */
+#custom-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  background-color: var(--primary-gold);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+}
+
+#custom-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(168, 136, 87, 0.55);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99998;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, background-color 0.3s ease;
+}
+
+body.cursor-hover #custom-cursor-ring {
+  width: 58px;
+  height: 58px;
+  border-color: rgba(168, 136, 87, 0.9);
+  background-color: rgba(168, 136, 87, 0.08);
+}
+
+@media (pointer: coarse) {
+
+  #custom-cursor-dot,
+  #custom-cursor-ring {
+    display: none !important;
+  }
+}
+
+/* ============================================================ */
+/* 3D PERSPECTIVE SPREAD & MAGNETIC BUTTONS                     */
+/* ============================================================ */
+.perspective-container {
+  perspective: 1400px;
+}
+
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.magnetic-wrap {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
+/* ============================================================ */
+/* AWWWARDS TEXT REVEAL & SECTION TRANSITIONS                   */
+/* ============================================================ */
+.clip-text-reveal {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  display: block;
+}
+
+.text-mask-hidden {
+  transform: translateY(115%);
+  opacity: 0;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.text-mask-visible {
+  transform: translateY(0%);
+  opacity: 1;
+}
+
+/* Preloader Backdrop Glass */
+#luxury-preloader {
+  transition: transform 0.9s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.6s ease;
+}
+
+#luxury-preloader.preloader-done {
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+/* Subtle Section Divider Animation */
+.section-line-reveal {
+  transform-origin: left center;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Page Cross-Fade for View Transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
+/* ============================================================ */
+/* EDITORIAL ARCHITECTURAL SHAPES & BENTO GRID                  */
+/* ============================================================ */
+
+/* Cathedral Arch - Semicircular dome top with elegant softly curved base */
+.shape-arch,
+.shape-arch-top {
+  border-top-left-radius: 9999px;
+  border-top-right-radius: 9999px;
+  border-bottom-left-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+}
+
+.shape-arch-pure {
+  border-top-left-radius: 9999px;
+  border-top-right-radius: 9999px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.shape-arch-bottom {
+  border-top-left-radius: 1.5rem;
+  border-top-right-radius: 1.5rem;
+  border-bottom-left-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+}
+
+/* 2x2 Hero Bento Shape Collage Quadrants */
+.shape-collage-tr {
+  border-top-left-radius: 140px;
+  border-top-right-radius: 140px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.shape-collage-br {
+  border-top-left-radius: 40px;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 90px;
+}
+
+.shape-collage-tl {
+  border-top-left-radius: 0;
+  border-top-right-radius: 60px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 90px;
+}
+
+.shape-collage-bl {
+  border-top-left-radius: 0;
+  border-top-right-radius: 90px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 90px;
+}
+
+/* Botanical Organic Leaves */
+.shape-leaf-1 {
+  border-top-left-radius: 90px;
+  border-bottom-right-radius: 90px;
+  border-top-right-radius: 28px;
+  border-bottom-left-radius: 28px;
+}
+
+.shape-leaf-2 {
+  border-top-right-radius: 90px;
+  border-bottom-left-radius: 90px;
+  border-top-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+}
+
+.shape-leaf-full {
+  border-top-left-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+  border-top-right-radius: 1.5rem;
+  border-bottom-left-radius: 1.5rem;
+}
+
+/* Botanical Petals Decor & Animations */
+.petal-decor {
+  pointer-events: none;
+  user-select: none;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+}
+
+@keyframes petalFloatSlow {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+}
+
+@keyframes petalFloatReverse {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(8px) rotate(-3deg);
+  }
+}
+
+.petal-float {
+  animation: petalFloatSlow 8s ease-in-out infinite;
+}
+
+.petal-float-rev {
+  animation: petalFloatReverse 10s ease-in-out infinite;
+}
+
+/* Bento Card Foundations */
+.bento-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 32px 64px -16px rgba(168, 136, 87, 0.22);
+}
+
+.bento-arch-card {
+  position: relative;
+  overflow: hidden;
+  border-top-left-radius: 160px;
+  border-top-right-radius: 160px;
+  border-bottom-left-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 12px 36px -10px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 1024px) {
+  .bento-arch-card {
+    border-top-left-radius: 190px;
+    border-top-right-radius: 190px;
+  }
+}
+
+.bento-arch-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 36px 70px -18px rgba(168, 136, 87, 0.25);
+}
+
+.bento-arch-card:hover img {
+  transform: scale(1.06);
 }

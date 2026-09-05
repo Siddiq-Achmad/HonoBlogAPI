@@ -1,4 +1,4 @@
-# 📚 Blog API — Dokumentasi API Lengkap
+# 📚 LUXIMA Blog & Editorial — Dokumentasi API Lengkap
 
 > **Base URL**: `http://localhost:3000/api`
 > **Rate Limit**: 100 requests / 15 minutes per IP.

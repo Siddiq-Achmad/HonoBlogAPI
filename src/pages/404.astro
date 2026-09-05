@@ -1,0 +1,127 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase.js';
+
+// Ambil rekomendasi artikel terkurasi agar pengunjung tetap terinspirasi
+const { data: recommendedPosts } = await supabase
+  .from('posts')
+  .select('*, author:profiles_view(fullName), category:categories(name)')
+  .order('created_at', { ascending: false })
+  .limit(3);
+---
+
+<Layout 
+  title="Lembaran yang Hilang • 404 Not Found — LUXIMA MAGAZINE"
+  description="Halaman yang Anda cari tidak ditemukan atau telah dipindahkan ke arsip edisi lain."
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24">
+    
+    <!-- Hero 404 Section -->
+    <div class="relative max-w-3xl mx-auto text-center py-16 px-6 sm:px-12 glass-panel rounded-3xl border border-[#a88857]/30 shadow-2xl overflow-hidden mb-20">
+      
+      <!-- Giant Artistic 404 Background Watermark -->
+      <div class="absolute -top-10 left-1/2 -translate-x-1/2 pointer-events-none select-none">
+        <span class="font-editorial text-[140px] sm:text-[220px] font-bold text-[#a88857]/5 tracking-[0.1em] leading-none block">
+          404
+        </span>
+      </div>
+
+      <div class="relative z-10">
+        <span class="inline-block px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] bg-[#a88857]/10 text-[#87693b] border border-[#a88857]/30 mb-6">
+          Lembaran yang Hilang • Page Not Found
+        </span>
+
+        <h1 class="font-editorial text-4xl sm:text-6xl text-[#1A1A1A] font-semibold leading-[1.15] mb-6">
+          Kisah yang Terlewat di Balik Lembaran Waktu
+        </h1>
+
+        <blockquote class="editorial-pullquote text-left text-sm sm:text-base my-6 max-w-xl mx-auto">
+          “Terkadang keindahan terbesar tidak berada di tempat yang kita tuju, melainkan di jalan tak terduga yang kita temui di sepanjang perjalanan.”
+        </blockquote>
+
+        <p class="text-sm text-neutral-600 font-light max-w-md mx-auto leading-relaxed mb-10">
+          Halaman editorial yang Anda tuju mungkin telah dipindahkan ke arsip khusus, atau tautan yang Anda gunakan memerlukan penyelarasan kembali.
+        </p>
+
+        <!-- Search Bar in 404 -->
+        <div class="max-w-md mx-auto mb-10">
+          <div class="relative">
+            <input 
+              type="text" 
+              placeholder="Cari gaun, venue, perhiasan, atau fotografer..." 
+              oninput="handleLiveSearch(this.value)"
+              class="w-full bg-white/90 border border-[#a88857]/30 rounded-full px-6 py-3.5 text-xs text-neutral-800 focus:outline-none focus:border-[#a88857] shadow-inner transition-all"
+            />
+            <button onclick="toggleSearchBar()" class="absolute right-3 top-2.5 p-2 text-[#a88857] hover:text-black">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Action CTAs -->
+        <div class="flex flex-wrap items-center justify-center gap-4">
+          <a 
+            href="/" 
+            class="px-8 py-3.5 rounded-full bg-[#1A1A1A] text-white text-xs uppercase tracking-widest font-semibold hover:bg-[#a88857] transition-all btn-luxury shadow-lg"
+          >
+            ← Kembali ke Sampul Depan
+          </a>
+          <a 
+            href="/magazine" 
+            class="px-8 py-3.5 rounded-full border border-[#a88857] text-[#87693b] text-xs uppercase tracking-widest font-semibold hover:bg-[#a88857]/10 transition-all btn-luxury"
+          >
+            Jelajahi Edisi Majalah →
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Recommended Stories for Inspiring the Visitor -->
+    {recommendedPosts && recommendedPosts.length > 0 && (
+      <section class="mt-16">
+        <div class="text-center max-w-xl mx-auto mb-12">
+          <span class="text-xs uppercase tracking-[0.25em] text-[#a88857] font-semibold">Temukan Inspirasi Lainnya</span>
+          <h2 class="font-editorial text-3xl sm:text-4xl text-[#1A1A1A] font-semibold mt-1">Kurasi Pilihan Redaksi</h2>
+          <p class="text-xs text-neutral-500 font-light mt-2">
+            Mungkin salah satu cerita pernikahan agung berikut dapat mengobati rasa ingin tahu Anda.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {recommendedPosts.map(post => (
+            <article class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between group">
+              <a href={`/blog/${post.slug}`} class="block">
+                <div class="aspect-[16/11] overflow-hidden relative">
+                  <img 
+                    src={post.cover_image || 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800'} 
+                    alt={post.title} 
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-106" 
+                  />
+                  <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[9px] uppercase tracking-wider font-semibold bg-white/90 backdrop-blur-md text-[#87693b]">
+                    {post.category?.name || 'General'}
+                  </span>
+                </div>
+                <div class="p-6">
+                  <h3 class="font-editorial text-2xl font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors leading-tight">
+                    {post.title}
+                  </h3>
+                  <p class="text-xs text-neutral-500 font-light mt-2.5 line-clamp-2 leading-relaxed">
+                    {post.description}
+                  </p>
+                </div>
+              </a>
+              <div class="px-6 pb-6 pt-2 flex items-center justify-between text-xs font-light text-neutral-400 border-t border-neutral-100">
+                <span class="truncate max-w-[150px]">{post.author?.fullName || 'LUXIMA Editorial'}</span>
+                <a href={`/blog/${post.slug}`} class="text-[#87693b] font-medium group-hover:translate-x-1 transition-transform">
+                  Baca Cerita →
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+  </div>
+</Layout>

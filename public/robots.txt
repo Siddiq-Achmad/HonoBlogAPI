@@ -1,0 +1,36 @@
+# LUXIMA Magazine & Blog - robots.txt
+# Standards for Web Crawlers & AI Search Engines (AEO / GEO)
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Allow: /api/health
+Allow: /api/rss
+
+# OpenAI Search & ChatGPT Crawler
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Perplexity AI Crawler
+User-agent: PerplexityBot
+Allow: /
+
+# Anthropic Claude Crawler
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+
+# Google Gemini & AI Overviews
+User-agent: Google-Extended
+Allow: /
+
+# Microsoft Copilot / Bing
+User-agent: Bingbot
+Allow: /
+
+# Sitemap Index
+Sitemap: https://blog.luxima.id/sitemap.xml

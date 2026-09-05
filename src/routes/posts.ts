@@ -37,13 +37,15 @@ posts.get('/rss', async (c) => {
   if (error) throw new AppError(500, 'RSS_GENERATION_FAILED', error.message)
 
   const baseUrl = process.env.BASE_URL || 'https://blog.luxima.id'
+  const cleanCdata = (str: string) => (str || '').replace(/\]\]>/g, ']]]]><![CDATA[>');
+
   const rssItems = (latestPosts || []).map(post => `
     <item>
-      <title><![CDATA[${post.title}]]></title>
+      <title><![CDATA[${cleanCdata(post.title)}]]></title>
       <link>${baseUrl}/blog/${post.slug}</link>
       <guid isPermaLink="true">${baseUrl}/blog/${post.slug}</guid>
       <pubDate>${new Date(post.created_at).toUTCString()}</pubDate>
-      <description><![CDATA[${post.description || ''}]]></description>
+      <description><![CDATA[${cleanCdata(post.description || '')}]]></description>
       <category>${post.category?.name || 'General'}</category>
       <author>${post.author?.fullName || 'LUXIMA'}</author>
     </item>
@@ -89,7 +91,7 @@ posts.get('/', zValidator('query', PostQuerySchema), async (c) => {
   const offset = (page - 1) * limit
 
   // Build the base query
-  let query = supabase
+  let query = supabaseAdmin
     .from('posts')
     .select(
       `
@@ -109,7 +111,14 @@ posts.get('/', zValidator('query', PostQuerySchema), async (c) => {
   }
 
   if (search) {
-    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,content.ilike.%${search}%`)
+    // Strip PostgREST filter operators & special chars to prevent syntax injection
+    const cleanSearch = String(search)
+      .replace(/[,()\\%_."'`]/g, ' ')
+      .trim()
+      .slice(0, 80);
+    if (cleanSearch) {
+      query = query.or(`title.ilike.%${cleanSearch}%,description.ilike.%${cleanSearch}%,content.ilike.%${cleanSearch}%`);
+    }
   }
 
   // Apply sorting and pagination

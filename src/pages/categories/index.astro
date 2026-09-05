@@ -1,0 +1,109 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import BotanicalPetal from '../../components/BotanicalPetal.astro';
+import { supabase, supabaseAdmin } from '../../lib/supabase.js';
+import { getCategoryImageUrl } from '../../lib/images.js';
+
+const client = supabaseAdmin || supabase;
+
+const { data: categories } = await client
+  .from('categories')
+  .select('*')
+  .eq('status', 'active')
+  .order('sort_order', { ascending: true })
+  .order('name');
+
+// Get post counts for each category
+const { data: postsData } = await client
+  .from('posts')
+  .select('category_id');
+
+const countMap: Record<string, number> = {};
+if (postsData) {
+  for (const p of postsData) {
+    if (p.category_id) {
+      countMap[p.category_id] = (countMap[p.category_id] || 0) + 1;
+    }
+  }
+}
+
+// Shape assignments for Bento layout variation
+const shapes = ['bento-arch-card shape-arch', 'bento-card shape-leaf-1', 'bento-card shape-leaf-2', 'bento-arch-card shape-arch', 'bento-card rounded-3xl'];
+---
+
+<Layout title="Kategori & Destinasi — LUXIMA MAGAZINE" activeNav="categories">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 relative overflow-hidden">
+    
+    <!-- Floating Botanical Petals -->
+    <BotanicalPetal color="sage" size={200} rotate={-15} opacity="0.35" class="absolute top-8 -left-16 petal-float" />
+    <BotanicalPetal color="sand" size={180} rotate={30} opacity="0.4" class="absolute top-24 -right-12 petal-float-rev" />
+
+    <div class="text-center max-w-2xl mx-auto mb-16 relative z-10">
+      <span class="text-xs uppercase tracking-[0.3em] text-[#87693b] font-semibold">Koleksi Tematik</span>
+      <h1 class="font-editorial text-4xl sm:text-6xl text-[#1A1A1A] font-semibold mt-2">Kategori & Destinasi</h1>
+      <p class="text-base text-neutral-600 font-light mt-4 leading-relaxed">
+        Temukan inspirasi spesifik dari berbagai elemen pernikahan: mulai dari pemilihan lokasi berkelas, gaun impian, tata rias tradisional, hingga dokumentasi visual abadi.
+      </p>
+    </div>
+
+    <!-- Curated Bento Grid of Categories -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+      {categories && categories.map((cat, idx) => {
+        const img = getCategoryImageUrl(cat.image);
+        const shapeClass = shapes[idx % shapes.length];
+        const postCount = countMap[cat.id] || 0;
+
+        return (
+          <a href={`/category/${cat.slug}`} class={`${shapeClass} bg-white border border-[#a88857]/25 shadow-sm group flex flex-col justify-between overflow-hidden hover:shadow-xl transition-all duration-500`}>
+            <div>
+              <div class="aspect-[16/11] overflow-hidden relative">
+                <img 
+                  src={img} 
+                  alt={cat.name} 
+                  loading="lazy" 
+                  decoding="async" 
+                  onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/categories/wedding-organizer.webp';"
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" 
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent flex items-end p-6">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                      {cat.icon && <span class="text-sm drop-shadow">{cat.icon}</span>}
+                      <span class="text-[10px] uppercase tracking-widest text-[#d8c2a7] font-semibold">
+                        {postCount > 0 ? `${postCount} Cerita Terbit` : 'Kurasi Eksklusif'}
+                      </span>
+                    </div>
+                    <span class="text-white font-editorial text-2xl sm:text-3xl font-semibold leading-tight drop-shadow-sm">{cat.name}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="p-6">
+                <p class="text-xs text-neutral-600 font-light leading-relaxed line-clamp-2">
+                  {cat.description || `Kurasi editorial pilihan untuk ${cat.name}, menghadirkan ulasan mendalam dan standar estetika tertinggi.`}
+                </p>
+              </div>
+            </div>
+            <div class="p-6 pt-0 text-xs font-semibold text-[#87693b] flex items-center justify-between border-t border-neutral-100 mt-2">
+              <span>Jelajahi Koleksi</span>
+              <span class="transform group-hover:translate-x-1.5 transition-transform">→</span>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+
+    <!-- Editorial Callout Section with Arch Silhouette -->
+    <div class="mt-20 glass-panel shape-arch p-8 sm:p-14 border border-[#a88857]/30 text-center relative overflow-hidden">
+      <BotanicalPetal color="sand" size={220} rotate={10} opacity="0.3" class="absolute -right-10 -bottom-10" />
+      <span class="text-xs uppercase tracking-[0.3em] text-[#87693b] font-semibold">Bespoke Guidance</span>
+      <h2 class="font-editorial text-3xl sm:text-4xl text-[#1A1A1A] font-semibold mt-2">Mencari Destinasi yang Belum Terdaftar?</h2>
+      <p class="text-sm text-neutral-600 font-light mt-3 max-w-lg mx-auto leading-relaxed">
+        Tim kurator LUXIMA memiliki akses ke berbagai villa privat eksklusif dan atelier mode tersembunyi di seluruh penjuru Nusantara dan internasional.
+      </p>
+      <a href="/about" class="mt-6 inline-flex px-8 py-3 rounded-full bg-[#1A1A1A] text-white text-xs uppercase tracking-widest font-semibold hover:bg-[#a88857] transition-all btn-luxury">
+        Hubungi Meja Redaksi
+      </a>
+    </div>
+
+  </div>
+</Layout>

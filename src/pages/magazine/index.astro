@@ -1,0 +1,466 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import BotanicalPetal from "../../components/BotanicalPetal.astro";
+---
+
+<Layout
+  title="Edisi Majalah & Editorial Pernikahan Indonesia — LUXIMA MAGAZINE"
+  activeNav="magazine"
+>
+  <div
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 relative overflow-hidden"
+  >
+    <!-- Floating Botanical Petals -->
+    <BotanicalPetal
+      color="sage"
+      size={200}
+      rotate={-15}
+      opacity="0.35"
+      class="absolute top-8 -left-16 petal-float"
+    />
+    <BotanicalPetal
+      color="sand"
+      size={180}
+      rotate={25}
+      opacity="0.4"
+      class="absolute top-20 -right-12 petal-float-rev"
+    />
+
+    <!-- Header Section -->
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span
+        class="text-xs uppercase tracking-[0.3em] text-[#a88857] font-semibold"
+        >The Printed & Digital Issues</span
+      >
+      <h1
+        class="font-editorial text-4xl sm:text-6xl text-[#1A1A1A] font-semibold mt-2"
+      >
+        Magazine & Editorial
+      </h1>
+      <p class="text-base text-neutral-600 font-light mt-4 leading-relaxed">
+        Arsip edisi majalah berkala LUXIMA, mengabadikan kemegahan adat
+        adiluhung Nusantara, seni kriya kebaya haute couture, serta kurasi
+        destinasi pernikahan paling sakral di Indonesia.
+      </p>
+    </div>
+
+    <!-- Current Issue Showcase & Dual Spread Lookbook -->
+    <section class="mb-24">
+      <div
+        class="glass-panel rounded-3xl p-6 sm:p-12 border border-[#a88857]/30"
+      >
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <span
+              class="inline-block px-3 py-1 rounded-full text-[10px] uppercase tracking-widest bg-[#a88857] text-white font-semibold mb-4"
+            >
+              Edisi Utama • Current Issue
+            </span>
+            <h2
+              class="font-editorial text-3xl sm:text-4xl text-[#1A1A1A] font-semibold leading-tight"
+            >
+              Vol. 08: Kemegahan Adat Kraton & Revolusi Kebaya Haute Couture
+            </h2>
+            <p class="text-sm text-neutral-600 font-light mt-4 leading-relaxed">
+              Dalam edisi ini, dewan redaksi menjelajahi sakralitas tata rias
+              Paes Ageng Kraton Ngayogyakarta, kemegahan altar samudra tebing
+              Uluwatu, dan eksplorasi mahakarya kebaya pengantin karya para
+              maestro Indonesia.
+            </p>
+
+            <div class="mt-8 flex flex-wrap gap-4 items-center">
+              <button
+                onclick="document.getElementById('spread-modal').classList.remove('hidden')"
+                class="px-6 py-3 rounded-full bg-[#1A1A1A] text-white text-xs uppercase tracking-wider font-semibold hover:bg-[#a88857] transition-all btn-luxury cursor-pointer"
+              >
+                Buka Preview Lembaran Digital
+              </button>
+              <button
+                onclick="window.showToast('Menyiapkan berkas digital untuk Vol. 08... Pengunduhan dimulai.', 'success')"
+                class="px-6 py-3 rounded-full border border-[#a88857] text-[#87693b] text-xs uppercase tracking-wider font-semibold hover:bg-[#a88857]/10 transition-all btn-luxury cursor-pointer"
+              >
+                Unduh Edisi (PDF)
+              </button>
+            </div>
+          </div>
+
+          <!-- Dual Spread Lookbook Mockup -->
+          <div class="perspective-container">
+            <div
+              class="magazine-spread aspect-[16/11] relative group cursor-pointer tilt-card"
+              onclick="document.getElementById('spread-modal').classList.remove('hidden')"
+            >
+              <div class="magazine-spread-gutter"></div>
+              <div class="grid grid-cols-2 h-full">
+                <div
+                  class="h-full bg-cover bg-center"
+                  style="background-image: url('https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp');"
+                >
+                </div>
+                <div
+                  class="h-full bg-[#FAF9F6] p-6 flex flex-col justify-between border-l border-neutral-200"
+                >
+                  <div>
+                    <span
+                      class="text-[9px] uppercase tracking-[0.25em] text-[#a88857] font-semibold"
+                      >Editorial Feature</span
+                    >
+                    <h4
+                      class="font-editorial text-xl font-semibold text-[#1A1A1A] mt-2"
+                    >
+                      Mahakarya Ageng Kraton
+                    </h4>
+                    <p
+                      class="text-[11px] text-neutral-500 font-light mt-2 leading-relaxed"
+                    >
+                      “Seni pernikahan adat bukan sekadar seremonial, melainkan
+                      ritual kosmik sakral yang menghubungkan doa leluhur,
+                      keluhuran budi pekerti, dan cinta abadi.”
+                    </p>
+                  </div>
+                  <span class="text-[10px] text-neutral-400 font-light"
+                    >Hal. 42-43 • LUXIMA MAGAZINE VOL. 08 NUSANTARA</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Letter from the Editor-in-Chief -->
+    <section class="mb-24 max-w-3xl mx-auto">
+      <div class="border-y border-[#a88857]/30 py-12 px-4 sm:px-8 text-center">
+        <span
+          class="text-xs uppercase tracking-[0.3em] text-[#a88857] font-semibold"
+          >Catatan Redaksi</span
+        >
+        <h3
+          class="font-editorial text-3xl sm:text-4xl text-[#1A1A1A] font-semibold mt-2"
+        >
+          Letter from the Editor-in-Chief
+        </h3>
+        <blockquote class="editorial-pullquote text-left my-8">
+          “Kemewahan sejati dalam sebuah perayaan pernikahan tidak diukur dari
+          gemerlap semata, melainkan dari kedalaman rasa, ketelitian kurasi
+          rasa, dan keanggunan yang tidak lekang oleh waktu.”
+        </blockquote>
+        <p
+          class="text-sm text-neutral-600 font-light leading-relaxed text-left"
+        >
+          Setiap lembar dalam LUXIMA Magazine dikurasi dengan satu tujuan:
+          memberikan penghormatan tertinggi kepada kekayaan tradisi, seni kriya
+          adiluhung, dan cinta sejati di tanah air. Dari sakralitas ronce melati
+          dan paes ageng Jawa hingga kemilau songket Minangkabau dan suaka
+          samudra Bali, kami merajut keindahan Indonesia menjadi inspirasi abadi
+          bagi pasangan berkelas.
+        </p>
+        <div class="mt-8 text-center">
+          <span class="font-editorial text-2xl font-semibold text-[#87693b]"
+            >Siddiq Achmad</span
+          >
+          <span
+            class="block text-xs uppercase tracking-widest text-neutral-400 font-light mt-1"
+            >Founder & Editor-in-Chief</span
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- Past Volume Archives -->
+    <section class="mb-24">
+      <div class="text-center mb-12">
+        <span
+          class="text-xs uppercase tracking-[0.25em] text-[#a88857] font-semibold"
+          >Koleksi Terdahulu</span
+        >
+        <h2
+          class="font-editorial text-3xl sm:text-4xl text-[#1A1A1A] font-semibold mt-1"
+        >
+          Volume Archives
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div
+          class="bento-arch-card shape-arch bg-white border border-[#a88857]/25 shadow-sm p-6 flex flex-col justify-between group"
+        >
+          <div>
+            <div
+              class="rounded-t-[140px] rounded-b-xl overflow-hidden aspect-[4/5] mb-4 relative"
+            >
+              <img
+                src="https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp"
+                alt="Vol 07"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <span
+              class="text-[10px] uppercase tracking-widest text-[#a88857] font-semibold"
+              >Musim Panas • Vol. 07</span
+            >
+            <h4
+              class="font-editorial text-2xl text-[#1A1A1A] font-semibold mt-1"
+            >
+              Dewata Sanctuary: Tebing Uluwatu & Keheningan Ubud
+            </h4>
+            <p class="text-xs text-neutral-500 font-light mt-2 leading-relaxed">
+              Menelusuri altar kaca terapung di atas Samudra Hindia, suaka
+              sungai Ayung di Ubud, dan resepsi pesta taman tropis berlatar
+              lembah hijau Pulau Dewata.
+            </p>
+          </div>
+          <button
+            onclick="window.showToast('Menyiapkan berkas digital untuk Vol. 07... Pengunduhan dimulai.', 'success')"
+            class="mt-6 w-full py-2.5 rounded-full border border-neutral-300 hover:border-[#a88857] text-xs font-semibold uppercase tracking-wider text-neutral-700 hover:text-[#87693b] transition-all cursor-pointer"
+          >
+            Unduh Edisi
+          </button>
+        </div>
+
+        <div
+          class="bento-arch-card shape-arch bg-white border border-[#a88857]/25 shadow-sm p-6 flex flex-col justify-between group"
+        >
+          <div>
+            <div
+              class="rounded-t-[140px] rounded-b-xl overflow-hidden aspect-[4/5] mb-4 relative"
+            >
+              <img
+                src="https://r2.luxima.id/cdn-cgi/image/width=1200,quality=75,format=auto/images/hero/bento-community.jpg"
+                alt="Vol 06"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <span
+              class="text-[10px] uppercase tracking-widest text-[#a88857] font-semibold"
+              >Musim Semi • Vol. 06</span
+            >
+            <h4
+              class="font-editorial text-2xl text-[#1A1A1A] font-semibold mt-1"
+            >
+              Pesona Parahyangan & Menoreh: Siger Kencana & Candi Borobudur
+            </h4>
+            <p class="text-xs text-neutral-500 font-light mt-2 leading-relaxed">
+              Keanggunan mahkota Siger Sunda di vila kolonial Lembang berpadu
+              dengan romantisme kolosal lembah Menoreh berlatar kemegahan Candi
+              Borobudur.
+            </p>
+          </div>
+          <button
+            onclick="window.showToast('Menyiapkan berkas digital untuk Vol. 06... Pengunduhan dimulai.', 'success')"
+            class="mt-6 w-full py-2.5 rounded-full border border-neutral-300 hover:border-[#a88857] text-xs font-semibold uppercase tracking-wider text-neutral-700 hover:text-[#87693b] transition-all cursor-pointer"
+          >
+            Unduh Edisi
+          </button>
+        </div>
+
+        <div
+          class="bento-arch-card shape-arch bg-white border border-[#a88857]/25 shadow-sm p-6 flex flex-col justify-between group"
+        >
+          <div>
+            <div
+              class="rounded-t-[140px] rounded-b-xl overflow-hidden aspect-[4/5] mb-4 relative"
+            >
+              <img
+                src="https://r2.luxima.id/cdn-cgi/image/width=1200,quality=75,format=auto/images/hero/aceh-venue.jpg"
+                alt="Vol 05"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <span
+              class="text-[10px] uppercase tracking-widest text-[#a88857] font-semibold"
+              >Musim Gugur • Vol. 05</span
+            >
+            <h4
+              class="font-editorial text-2xl text-[#1A1A1A] font-semibold mt-1"
+            >
+              Kilau Emas Minang & Kemewahan Bahari Flores
+            </h4>
+            <p class="text-xs text-neutral-500 font-light mt-2 leading-relaxed">
+              Kemegahan mahkota Sunting Gadang bertingkat sebelas di Ranah
+              Minang serta petualangan resepsi privat di atas Phinisi mewah
+              Labuan Bajo.
+            </p>
+          </div>
+          <button
+            onclick="window.showToast('Menyiapkan berkas digital untuk Vol. 05... Pengunduhan dimulai.', 'success')"
+            class="mt-6 w-full py-2.5 rounded-full border border-neutral-300 hover:border-[#a88857] text-xs font-semibold uppercase tracking-wider text-neutral-700 hover:text-[#87693b] transition-all cursor-pointer"
+          >
+            Unduh Edisi
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 Editorial Pillars -->
+    <section
+      class="bg-white/80 rounded-3xl p-8 sm:p-12 border border-[#a88857]/20"
+    >
+      <div class="text-center max-w-xl mx-auto mb-10">
+        <span
+          class="text-xs uppercase tracking-[0.3em] text-[#a88857] font-semibold"
+          >Prinsip Kurasi</span
+        >
+        <h3 class="font-editorial text-3xl text-[#1A1A1A] font-semibold mt-1">
+          The 4 Editorial Pillars
+        </h3>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+        <div class="p-4">
+          <span class="font-editorial text-3xl font-semibold text-[#a88857]"
+            >01</span
+          >
+          <h5
+            class="text-sm font-semibold text-neutral-800 uppercase tracking-wider mt-2"
+          >
+            Adiluhung Heritage
+          </h5>
+          <p class="text-xs text-neutral-500 font-light mt-2">
+            Pelestarian dan reinterpretasi nilai sakral tata cara adat
+            pernikahan Nusantara.
+          </p>
+        </div>
+        <div class="p-4">
+          <span class="font-editorial text-3xl font-semibold text-[#a88857]"
+            >02</span
+          >
+          <h5
+            class="text-sm font-semibold text-neutral-800 uppercase tracking-wider mt-2"
+          >
+            Haute Kebaya Couture
+          </h5>
+          <p class="text-xs text-neutral-500 font-light mt-2">
+            Apresiasi tinggi terhadap kebaya sulam tangan, batik tulis sutra
+            ATBM, dan tenun songket.
+          </p>
+        </div>
+        <div class="p-4">
+          <span class="font-editorial text-3xl font-semibold text-[#a88857]"
+            >03</span
+          >
+          <h5
+            class="text-sm font-semibold text-neutral-800 uppercase tracking-wider mt-2"
+          >
+            Sacred Sanctuaries
+          </h5>
+          <p class="text-xs text-neutral-500 font-light mt-2">
+            Kurasi destinasi pesta pernikahan paling intim dan dramatis di
+            seluruh penjuru Indonesia.
+          </p>
+        </div>
+        <div class="p-4">
+          <span class="font-editorial text-3xl font-semibold text-[#a88857]"
+            >04</span
+          >
+          <h5
+            class="text-sm font-semibold text-neutral-800 uppercase tracking-wider mt-2"
+          >
+            Sustainable Flora
+          </h5>
+          <p class="text-xs text-neutral-500 font-light mt-2">
+            Seni instalasi ronce melati dan anyaman janur ramah lingkungan tanpa
+            floral foam.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- SPREAD VIEWER MODAL -->
+  <div
+    id="spread-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+  >
+    <div
+      class="absolute inset-0 bg-black/70 backdrop-blur-sm"
+      onclick="this.parentElement.classList.add('hidden')"
+    >
+    </div>
+    <div
+      class="relative max-w-5xl w-full bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-h-[95vh] overflow-y-auto"
+    >
+      <div
+        class="flex items-center justify-between pb-4 border-b border-neutral-200 mb-6"
+      >
+        <div>
+          <span
+            class="text-[10px] uppercase tracking-widest text-[#a88857] font-semibold"
+            >Digital Edition Spread</span
+          >
+          <h3 class="font-editorial text-2xl text-[#1A1A1A] font-semibold">
+            Vol. 08 Preview Spread
+          </h3>
+        </div>
+        <button
+          onclick="document.getElementById('spread-modal').classList.add('hidden')"
+          class="p-2 text-neutral-400 hover:text-black"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path></svg
+          >
+        </button>
+      </div>
+
+      <div
+        class="magazine-spread aspect-[16/10] relative rounded-2xl overflow-hidden border border-neutral-200"
+      >
+        <div class="magazine-spread-gutter"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 h-full">
+          <div
+            class="h-full bg-cover bg-center"
+            style="background-image: url('https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/images/hero/bento-community.jpg');"
+          >
+          </div>
+          <div
+            class="h-full bg-[#FAF9F6] p-6 sm:p-10 flex flex-col justify-between"
+          >
+            <div>
+              <span
+                class="text-xs uppercase tracking-[0.3em] text-[#a88857] font-semibold"
+                >Editorial Feature</span
+              >
+              <h2
+                class="font-editorial text-3xl font-semibold text-[#1A1A1A] mt-2"
+              >
+                Mahakarya Kraton & Altar Samudra Dewata
+              </h2>
+              <blockquote class="editorial-pullquote text-xs sm:text-sm my-4">
+                “Di bawah naungan atap Joglo jati lawas dan hembusan angin
+                samudra Uluwatu, ikrar suci bergema mengiringi langkah cinta
+                abadi.”
+              </blockquote>
+              <p class="text-xs text-neutral-600 font-light leading-relaxed">
+                Kebaya kutubaru haute couture dengan sulaman benang sutra
+                bermotif flora Nusantara dan mahkota Paes Ageng Kanigaran
+                berlapis emas murni memancarkan aura putri bangsawan yang santun
+                nan bersahaja.
+              </p>
+            </div>
+            <div
+              class="flex items-center justify-between text-[11px] text-neutral-400 border-t border-neutral-200 pt-4"
+            >
+              <span>Halaman 42</span>
+              <span>LUXIMA MAGAZINE • ISSUE 08</span>
+              <span>Halaman 43</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

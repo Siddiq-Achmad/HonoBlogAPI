@@ -19,7 +19,7 @@ comments.get('/', zValidator('query', CommentQuerySchema), async (c) => {
   const { page, limit, post_id } = c.req.valid('query')
   const offset = (page - 1) * limit
 
-  let query = supabase
+  let query = supabaseAdmin
     .from('comments')
     .select(
       `

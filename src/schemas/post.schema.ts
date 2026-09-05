@@ -90,7 +90,7 @@ export const PostQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(10),
   category_id: z.string().uuid().optional(),
   tag: z.string().optional(),
-  search: z.string().min(1).optional(),
+  search: z.string().min(1).max(100, 'Search query too long').optional(),
   sort_by: z.enum(['created_at', 'updated_at', 'title']).default('created_at'),
   order: z.enum(['asc', 'desc']).default('desc'),
 })

@@ -1,0 +1,90 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import BotanicalPetal from '../../components/BotanicalPetal.astro';
+import { supabaseAdmin } from '../../lib/supabase.js';
+
+const { data: posts } = await supabaseAdmin
+  .from('posts')
+  .select('*, author:profiles_view(id, fullName, avatar), category:categories(id, name, slug)')
+  .order('created_at', { ascending: false });
+
+const { data: categories } = await supabaseAdmin
+  .from('categories')
+  .select('*')
+  .order('name');
+---
+
+<Layout title="Warta & Editorial Wedding Indonesia — LUXIMA MAGAZINE" activeNav="home">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 relative overflow-hidden">
+    
+    <!-- Floating Botanical Petals -->
+    <BotanicalPetal color="sage" size={210} rotate={-10} opacity="0.35" class="absolute top-10 -left-16 petal-float" />
+    <BotanicalPetal color="sand" size={190} rotate={20} opacity="0.4" class="absolute top-28 -right-12 petal-float-rev" />
+
+    <div class="text-center max-w-3xl mx-auto mb-16 relative z-10">
+      <span class="text-xs uppercase tracking-[0.3em] text-[#87693b] font-semibold">Koleksi Editorial Pernikahan Nusantara</span>
+      <h1 class="font-editorial text-4xl sm:text-6xl text-[#1A1A1A] font-semibold mt-2">Warta & Editorial Wedding Indonesia</h1>
+      <p class="text-base text-neutral-600 font-light mt-4 leading-relaxed">
+        Kurasi menyeluruh 12 liputan pernikahan mewah Indonesia, ulasan suaka eksotis Nusantara, filosofi adat sakral, hingga kriya busana kebaya couture.
+      </p>
+
+      <!-- Category Filter Pills -->
+      <div class="flex items-center justify-center gap-2.5 overflow-x-auto no-scrollbar pt-8">
+        <a href="/blog" class="px-5 py-2 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#1A1A1A] text-white">
+          Semua
+        </a>
+        {categories && categories.map(cat => (
+          <a 
+            href={`/category/${cat.slug}`} 
+            class="px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider bg-white border border-[#a88857]/30 text-neutral-700 hover:bg-[#a88857]/10 transition-colors"
+          >
+            {cat.name}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- Bento Grid of Stories -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+      {posts && posts.map((post, idx) => {
+        const shapeClass = idx % 3 === 0 ? 'bento-arch-card shape-arch' : (idx % 3 === 1 ? 'bento-card shape-leaf-1' : 'bento-card rounded-3xl');
+        return (
+          <article class={`${shapeClass} bg-white border border-[#a88857]/25 flex flex-col justify-between group shadow-sm`}>
+            <a href={`/blog/${post.slug}`} class="block flex-1 flex flex-col">
+              <div class="aspect-[16/11] overflow-hidden relative">
+                <img 
+                  src={post.cover_image || 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800'} 
+                  alt={post.title}
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4 z-10">
+                  <span class="px-3 py-1 rounded-full text-[9px] uppercase tracking-wider font-semibold bg-white/95 backdrop-blur-md text-[#87693b] shadow-sm">
+                    {post.category?.name || 'Editorial'}
+                  </span>
+                </div>
+              </div>
+              <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <div class="text-[10px] uppercase tracking-widest text-neutral-400 font-light mb-2">
+                    {post.reading_time || 5} Menit Baca • {new Date(post.created_at).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
+                  </div>
+                  <h3 class="font-editorial text-2xl font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors leading-snug">
+                    {post.title}
+                  </h3>
+                  <p class="text-xs text-neutral-500 font-light mt-2.5 line-clamp-2 leading-relaxed">
+                    {post.description}
+                  </p>
+                </div>
+                <div class="pt-4 border-t border-neutral-100 flex items-center justify-between text-xs font-semibold text-[#87693b] mt-4">
+                  <span>Baca Selengkapnya</span>
+                  <span class="transform group-hover:translate-x-1 transition-transform">→</span>
+                </div>
+              </div>
+            </a>
+          </article>
+        );
+      })}
+    </div>
+
+  </div>
+</Layout>

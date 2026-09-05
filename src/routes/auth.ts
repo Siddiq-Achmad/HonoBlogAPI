@@ -3,6 +3,7 @@
 // ============================================================
 
 import { Hono } from 'hono'
+import { deleteCookie } from 'hono/cookie'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { supabase, supabaseAdmin } from '../lib/supabase.js'
@@ -119,6 +120,8 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
       id: data.user.id,
       email: data.user.email,
       name: data.user.user_metadata?.full_name || null,
+      role: data.user.user_metadata?.role || 'user',
+      tier: data.user.user_metadata?.tier || 'standard',
     },
     session: {
       access_token: data.session.access_token,
@@ -159,16 +162,55 @@ auth.post(
   }
 )
 
-// ── POST /auth/logout ───────────────────────────────────────
-
-auth.post('/logout', authRequired, async (c) => {
-  const { error } = await supabase.auth.signOut()
-
-  if (error) {
-    return errorResponse(c, 500, 'LOGOUT_FAILED', error.message)
+function clearAuthCookies(c: any) {
+  const cookieNames = [
+    'sb-luxima-auth-token',
+    'sb-luxima-auth-token-access-token',
+    'Auth_name',
+    'Auth_role',
+    'Auth_tier',
+  ]
+  for (let i = 0; i < 5; i++) {
+    cookieNames.push('sb-luxima-auth-token.' + i)
   }
 
+  const domains = ['.luxima.id', '.awedz.id', '.localhost', 'localhost', undefined]
+
+  for (const name of cookieNames) {
+    for (const domain of domains) {
+      deleteCookie(c, name, {
+        path: '/',
+        domain,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+      })
+    }
+  }
+}
+
+// ── POST /auth/logout ───────────────────────────────────────
+
+auth.post('/logout', async (c) => {
+  try {
+    await supabase.auth.signOut()
+  } catch (e) {
+    // Non-fatal if session already invalidated
+  }
+
+  clearAuthCookies(c)
   return successResponse(c, { message: 'Logged out successfully' })
+})
+
+// ── GET /auth/logout ────────────────────────────────────────
+
+auth.get('/logout', async (c) => {
+  try {
+    await supabase.auth.signOut()
+  } catch (e) {}
+
+  clearAuthCookies(c)
+  const returnTo = c.req.query('returnTo') || '/'
+  return c.redirect(returnTo)
 })
 
 // ── GET /auth/me ────────────────────────────────────────────

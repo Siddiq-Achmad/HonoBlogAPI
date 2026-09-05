@@ -12,6 +12,8 @@ export interface AuthUser {
   id: string
   email: string
   role?: string
+  tier?: string
+  name?: string
 }
 
 export interface PaginationMeta {

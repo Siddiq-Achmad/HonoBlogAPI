@@ -1,3 +1,4 @@
+import 'dotenv/config';
 // ============================================================
 // Supabase Client — Initialize public and admin clients
 // ============================================================
@@ -5,9 +6,10 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Validate environment variables
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const metaEnv = typeof import.meta !== 'undefined' && (import.meta as any).env ? (import.meta as any).env : {};
+const supabaseUrl = process.env.SUPABASE_URL || metaEnv.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || metaEnv.SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || metaEnv.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
   console.error('❌ Environment Variables Error:', {
