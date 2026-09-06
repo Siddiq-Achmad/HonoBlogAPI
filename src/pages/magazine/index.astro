@@ -1,6 +1,18 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import BotanicalPetal from "../../components/BotanicalPetal.astro";
+import { supabaseAdmin, supabase } from "../../lib/supabase.js";
+import { getPostCoverUrl } from "../../lib/images.js";
+import { getPostSanctuaryDetails } from "../../lib/sanctuary.js";
+
+const client = supabaseAdmin || supabase;
+
+// Fetch top 3 featured editorial articles from Supabase
+const { data: spotlightPosts } = await client
+  .from("posts")
+  .select("*, author:profiles_view(id, fullName, avatar), category:categories(id, name, slug)")
+  .order("created_at", { ascending: false })
+  .limit(3);
 ---
 
 <Layout
@@ -129,6 +141,74 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
       </div>
     </section>
 
+    <!-- Editorial Spotlight: Kisah Pilihan Dewan Redaksi (Dynamically Loaded from Database) -->
+    {spotlightPosts && spotlightPosts.length > 0 && (
+      <section class="mb-24">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-10 pb-4 border-b border-[#a88857]/25">
+          <div>
+            <span class="text-xs uppercase tracking-[0.3em] text-[#a88857] font-semibold">Kurasi Dari Meja Redaksi</span>
+            <h2 class="font-editorial text-3xl sm:text-4xl text-[#1A1A1A] font-semibold mt-1">
+              Editorial Spotlight
+            </h2>
+          </div>
+          <a href="/blog" class="text-xs font-semibold text-[#87693b] hover:text-[#1A1A1A] uppercase tracking-wider mt-2 sm:mt-0 flex items-center gap-1.5 transition-colors">
+            <span>Lihat Semua 16 Cerita</span>
+            <span>→</span>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {spotlightPosts.map((post, idx) => {
+            const coverUrl = getPostCoverUrl(post.cover_image, { width: 800, quality: 75 });
+            const sanctuaryDetails = getPostSanctuaryDetails(post);
+            const shapeClass = idx === 0 ? "bento-arch-card shape-arch" : (idx === 1 ? "bento-card shape-leaf-1" : "bento-card rounded-3xl");
+
+            return (
+              <article class={`${shapeClass} bg-white border border-[#a88857]/25 shadow-sm p-6 flex flex-col justify-between group hover:shadow-xl transition-all duration-500`}>
+                <div>
+                  <div class="aspect-[16/11] rounded-2xl overflow-hidden mb-5 relative">
+                    <img
+                      src={coverUrl}
+                      alt={post.title}
+                      loading="lazy"
+                      decoding="async"
+                      onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=800,quality=75,format=auto/images/hero/aceh-venue.jpg';"
+                      class="w-full h-full object-cover group-hover:scale-106 transition-transform duration-700"
+                    />
+                    <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[9px] uppercase tracking-widest text-[#d8c2a7] font-semibold">
+                      {sanctuaryDetails.tag}
+                    </div>
+                  </div>
+
+                  <span class="text-[10px] uppercase tracking-widest text-[#a88857] font-semibold block mb-1">
+                    {sanctuaryDetails.sanctuary}
+                  </span>
+                  <h3 class="font-editorial text-2xl font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors leading-tight">
+                    <a href={`/blog/${post.slug}`}>
+                      {post.title}
+                    </a>
+                  </h3>
+                  <p class="text-xs text-neutral-500 font-light mt-3 leading-relaxed line-clamp-3">
+                    {post.description}
+                  </p>
+                </div>
+
+                <div class="pt-5 border-t border-neutral-100 flex items-center justify-between text-xs font-semibold text-[#87693b] mt-5">
+                  <a href={`/blog/${post.slug}`} class="inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                    <span>Baca Ulasan Lengkap</span>
+                    <span>→</span>
+                  </a>
+                  <span class="text-[10px] text-neutral-400 font-light">
+                    {post.reading_time || 5} Min
+                  </span>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    )}
+
     <!-- Letter from the Editor-in-Chief -->
     <section class="mb-24 max-w-3xl mx-auto">
       <div class="border-y border-[#a88857]/30 py-12 px-4 sm:px-8 text-center">
@@ -195,7 +275,8 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
                 alt="Vol 07"
                 loading="lazy"
                 decoding="async"
-                class="w-full h-full object-cover"
+                onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=800,quality=75,format=auto/images/hero/aceh-venue.jpg';"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
             </div>
             <span
@@ -217,7 +298,7 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
             onclick="window.showToast('Menyiapkan berkas digital untuk Vol. 07... Pengunduhan dimulai.', 'success')"
             class="mt-6 w-full py-2.5 rounded-full border border-neutral-300 hover:border-[#a88857] text-xs font-semibold uppercase tracking-wider text-neutral-700 hover:text-[#87693b] transition-all cursor-pointer"
           >
-            Unduh Edisi
+            Unduh Edisi (PDF)
           </button>
         </div>
 
@@ -233,7 +314,8 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
                 alt="Vol 06"
                 loading="lazy"
                 decoding="async"
-                class="w-full h-full object-cover"
+                onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=800,quality=75,format=auto/images/hero/aceh-venue.jpg';"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
             </div>
             <span
@@ -255,7 +337,7 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
             onclick="window.showToast('Menyiapkan berkas digital untuk Vol. 06... Pengunduhan dimulai.', 'success')"
             class="mt-6 w-full py-2.5 rounded-full border border-neutral-300 hover:border-[#a88857] text-xs font-semibold uppercase tracking-wider text-neutral-700 hover:text-[#87693b] transition-all cursor-pointer"
           >
-            Unduh Edisi
+            Unduh Edisi (PDF)
           </button>
         </div>
 
@@ -271,7 +353,8 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
                 alt="Vol 05"
                 loading="lazy"
                 decoding="async"
-                class="w-full h-full object-cover"
+                onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=800,quality=75,format=auto/images/hero/aceh-venue.jpg';"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
             </div>
             <span
@@ -281,19 +364,18 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
             <h4
               class="font-editorial text-2xl text-[#1A1A1A] font-semibold mt-1"
             >
-              Kilau Emas Minang & Kemewahan Bahari Flores
+              Serambi Mekkah & Bahari Flores: Adat Aceh & Phinisi Mewah
             </h4>
             <p class="text-xs text-neutral-500 font-light mt-2 leading-relaxed">
-              Kemegahan mahkota Sunting Gadang bertingkat sebelas di Ranah
-              Minang serta petualangan resepsi privat di atas Phinisi mewah
-              Labuan Bajo.
+              Kemegahan pelaminan Puade berhias ornamen Pinto Aceh di pesisir Sabang
+              serta petualangan resepsi privat matahari terbenam di atas Phinisi mewah Labuan Bajo.
             </p>
           </div>
           <button
             onclick="window.showToast('Menyiapkan berkas digital untuk Vol. 05... Pengunduhan dimulai.', 'success')"
             class="mt-6 w-full py-2.5 rounded-full border border-neutral-300 hover:border-[#a88857] text-xs font-semibold uppercase tracking-wider text-neutral-700 hover:text-[#87693b] transition-all cursor-pointer"
           >
-            Unduh Edisi
+            Unduh Edisi (PDF)
           </button>
         </div>
       </div>
@@ -400,7 +482,7 @@ import BotanicalPetal from "../../components/BotanicalPetal.astro";
         </div>
         <button
           onclick="document.getElementById('spread-modal').classList.add('hidden')"
-          class="p-2 text-neutral-400 hover:text-black"
+          class="p-2 text-neutral-400 hover:text-black cursor-pointer"
         >
           <svg
             class="w-6 h-6"

@@ -53,7 +53,7 @@ app.use('*', secureHeaders({
     scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-    imgSrc: ["'self'", "data:", "blob:", "https://images.unsplash.com", "https://*.supabase.co"],
+    imgSrc: ["'self'", "data:", "blob:", "https://r2.luxima.id", "https://*.supabase.co", "https://lh3.googleusercontent.com", "https://*.luxima.id"],
     connectSrc: ["'self'", "https://*.supabase.co", "https://auth.luxima.id"],
     frameAncestors: ["'none'"],
   },
@@ -97,18 +97,19 @@ if (typeof Bun !== 'undefined') {
   app.use('/favicon.ico', serveStatic({ path: './favicon.ico' }))
 }
 
-// ── Backend API Root Route ──────────────────────────────────
-app.get('/', (c) => c.json({
+// ── API Routes ──────────────────────────────────────────────
+
+const api = app.basePath('/api')
+
+// ── Backend API Info Route (/api and /api/) ────────────────
+api.get('/', (c) => c.json({
   success: true,
   service: 'LUXIMA Editorial & Magazine API',
   version: '1.0.2',
   engine: 'Astro v7 + Hono v4.7',
-  health: '/api/health'
+  health: '/api/health',
+  documentation: 'https://blog.luxima.id/api'
 }))
-
-// ── API Routes ──────────────────────────────────────────────
-
-const api = app.basePath('/api')
 
 // Health Check
 api.get('/health', async (c) => {
@@ -141,7 +142,7 @@ api.get('/sitemap.xml', async (c) => {
   const { data: posts } = await supabase.from('posts').select('slug, updated_at')
   const { data: categories } = await supabase.from('categories').select('slug')
 
-  const escapeXml = (unsafe: string) => 
+  const escapeXml = (unsafe: string) =>
     String(unsafe || '').replace(/[<>&'"]/g, (c) => {
       switch (c) {
         case '<': return '&lt;';

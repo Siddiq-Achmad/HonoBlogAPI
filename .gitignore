@@ -26,3 +26,6 @@ npm-debug.log*
 
 # Test coverage
 coverage/
+
+# Astro build & cache
+.astro/

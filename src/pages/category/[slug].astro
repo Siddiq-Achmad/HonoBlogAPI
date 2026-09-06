@@ -2,7 +2,8 @@
 import Layout from '../../layouts/Layout.astro';
 import BotanicalPetal from '../../components/BotanicalPetal.astro';
 import { supabase, supabaseAdmin } from '../../lib/supabase.js';
-import { getCategoryImageUrl } from '../../lib/images.js';
+import { getCategoryImageUrl, getPostCoverUrl, getUserAvatarUrl } from '../../lib/images.js';
+import { getPostSanctuaryDetails } from '../../lib/sanctuary.js';
 
 const { slug } = Astro.params;
 
@@ -86,35 +87,45 @@ const { data: posts } = await client
     {posts && posts.length > 0 ? (
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
         {posts.map(post => {
-          const authorAvatar = post.author?.avatar || '/assets/avatar-fallback.svg';
+          const coverUrl = getPostCoverUrl(post.cover_image, { width: 800, quality: 75 });
+          const sanctuaryInfo = getPostSanctuaryDetails(post);
+          const authorAvatar = getUserAvatarUrl(post.author?.avatar);
           const authorName = post.author?.fullName || 'LUXIMA Editorial';
           
           return (
             <article class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between group border border-[#a88857]/20 hover:border-[#a88857]/50 hover:shadow-xl transition-all duration-500 bg-white">
-              <a href={`/blog/${post.slug}`} class="block">
+              <a href={`/blog/${post.slug}`} class="block flex-1 flex flex-col">
                 <div class="aspect-[16/11] overflow-hidden relative">
                   <img 
-                    src={post.cover_image || 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800'} 
+                    src={coverUrl} 
                     alt={post.title} 
                     loading="lazy"
                     decoding="async"
-                    onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/categories/wedding-organizer.webp';"
+                    onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=800,quality=75,format=auto/images/hero/aceh-venue.jpg';"
                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-106" 
                   />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <div class="p-6">
-                  <div class="flex items-center gap-2 text-[10px] uppercase tracking-wider text-neutral-400 font-light mb-2">
-                    <span>{new Date(post.created_at).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}</span>
-                    <span>•</span>
-                    <span>{post.reading_time || 5} Menit Baca</span>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-between p-4 z-10">
+                    <span class="px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold bg-white/95 backdrop-blur-md text-[#87693b] shadow-sm">
+                      {category.name}
+                    </span>
+                    <span class="text-[9px] uppercase tracking-widest font-semibold text-white/90 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                      {sanctuaryInfo.tag}
+                    </span>
                   </div>
-                  <h3 class="font-editorial text-2xl font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors leading-tight line-clamp-2">
-                    {post.title}
-                  </h3>
-                  <p class="text-xs text-neutral-500 font-light mt-2.5 line-clamp-3 leading-relaxed">
-                    {post.description}
-                  </p>
+                </div>
+                <div class="p-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between text-[10px] uppercase tracking-wider text-neutral-400 font-light mb-2">
+                      <span class="text-[#a88857] font-semibold">{sanctuaryInfo.sanctuary}</span>
+                      <span>{post.reading_time || 5} Menit Baca</span>
+                    </div>
+                    <h3 class="font-editorial text-2xl font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors leading-tight line-clamp-2">
+                      {post.title}
+                    </h3>
+                    <p class="text-xs text-neutral-500 font-light mt-2.5 line-clamp-3 leading-relaxed">
+                      {post.description}
+                    </p>
+                  </div>
                 </div>
               </a>
               <div class="px-6 pb-6 pt-2 flex items-center justify-between text-xs font-light text-neutral-400 border-t border-neutral-100">

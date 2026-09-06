@@ -2,23 +2,49 @@
 import Layout from '../layouts/Layout.astro';
 import BotanicalPetal from '../components/BotanicalPetal.astro';
 import { supabaseAdmin } from '../lib/supabase.js';
+import { getPostSanctuaryDetails } from '../lib/sanctuary.js';
+import { getPostCoverUrl } from '../lib/images.js';
 
-// Server-Side Data Fetching (SSR)
-const { data: posts } = await supabaseAdmin
+// Server-Side Data Fetching (SSR) — Fetch all published Indonesian editorial stories
+const { data: posts, count: totalPosts } = await supabaseAdmin
   .from('posts')
-  .select('*, author:profiles_view(id, fullName, avatar), category:categories(id, name, slug)')
+  .select('*, author:profiles_view(id, fullName, avatar), category:categories(id, name, slug)', { count: 'exact' })
   .order('created_at', { ascending: false })
-  .limit(12);
+  .limit(20);
 
 const { data: categories } = await supabaseAdmin
   .from('categories')
   .select('*')
   .order('name');
 
+// 1. Primary Hero Feature (Most recent editorial article)
 const heroPost = posts && posts.length > 0 ? posts[0] : null;
-const archSanctuaries = posts && posts.length > 1 ? posts.slice(1, 4) : [];
-const bentoPosts = posts && posts.length > 4 ? posts.slice(4, 9) : (posts || []);
-const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : [];
+
+// 2. Select 3 authentic venue / sanctuary destination posts for Cathedral Arch Cards
+const venuePosts = (posts || []).filter((p) =>
+  p.category?.slug === 'venues' ||
+  (Array.isArray(p.tags) && p.tags.some((t: string) =>
+    ['luxury-venue', 'destination-wedding', 'coastal-sanctuary', 'luxury-retreat', 'heritage-sumatra'].includes(t)
+  ))
+);
+const archSanctuaries = venuePosts.length >= 3 
+  ? venuePosts.slice(0, 3) 
+  : (posts && posts.length > 1 ? posts.slice(1, 4) : []);
+
+// Set of IDs already featured in Hero & Arch sections to avoid repetition
+const featuredIds = new Set<string>();
+if (heroPost) featuredIds.add(heroPost.id);
+archSanctuaries.forEach(p => featuredIds.add(p.id));
+
+// 3. Bento Grid Stories: select non-duplicate editorial features
+const remainingPosts = (posts || []).filter(p => !featuredIds.has(p.id));
+const bentoPosts = remainingPosts.slice(0, 4);
+
+// Mark bento IDs as featured
+bentoPosts.forEach(p => featuredIds.add(p.id));
+
+// 4. Additional Editorial Stories (Warta Kriya & Tradisi)
+const additionalEditorials = (posts || []).filter(p => !featuredIds.has(p.id));
 ---
 
 <Layout title="LUXIMA MAGAZINE — Kurasi Berita & Editorial Pernikahan Mewah Indonesia" activeNav="home">
@@ -75,7 +101,7 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
         </div>
       </div>
 
-      <!-- Right Column: 2x2 Bento Shape Mosaic Collage -->
+      <!-- Right Column: 2x2 Bento Shape Mosaic Collage (Synchronized with R2 awedz assets) -->
       <div class="lg:col-span-6 relative">
         <div class="grid grid-cols-2 gap-3 sm:gap-4 p-2 relative z-10">
           
@@ -85,7 +111,7 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
             <div class="shape-collage-tl bg-neutral-200 overflow-hidden h-36 sm:h-44 shadow-md group relative bento-card border border-white/60">
               <img 
                 src="https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp" 
-                alt="Interior Grand Salon" 
+                alt="Interior Pendopo Ageng & Gebyok Jati" 
                 loading="eager"
                 decoding="async"
                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -97,20 +123,40 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
 
             <!-- Bottom-Left Shape: Deep sweeping organic leaf curve -->
             <div class="shape-collage-bl bg-neutral-200 overflow-hidden h-64 sm:h-80 shadow-lg group relative bento-card border border-white/60">
-              <img 
-                src={heroPost?.cover_image || "https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/bento-community.jpg"} 
-                alt={heroPost?.title || "Bridal Estate"} 
-                loading="eager"
-                fetchpriority="high"
-                decoding="async"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex flex-col justify-end p-6 pl-8 pb-7 text-white">
-                <span class="text-[9px] uppercase tracking-widest text-[#d8c2a7] font-semibold mb-1">Featured Sanctuary</span>
-                <h3 class="font-editorial text-lg sm:text-xl font-semibold leading-tight line-clamp-2">
-                  {heroPost?.title || 'Villa Balbiano Waterfront Romance'}
-                </h3>
-              </div>
+              {heroPost ? (
+                <a href={`/blog/${heroPost.slug}`} class="block w-full h-full">
+                  <img 
+                    src={getPostCoverUrl(heroPost.cover_image, { width: 1920, quality: 80 })} 
+                    alt={heroPost.title} 
+                    loading="eager"
+                    fetchpriority="high"
+                    decoding="async"
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex flex-col justify-end p-6 pl-8 pb-7 text-white">
+                    <span class="text-[9px] uppercase tracking-widest text-[#d8c2a7] font-semibold mb-1">
+                      {heroPost.category?.name || 'Featured Sanctuary'}
+                    </span>
+                    <h3 class="font-editorial text-lg sm:text-xl font-semibold leading-tight line-clamp-2">
+                      {heroPost.title}
+                    </h3>
+                  </div>
+                </a>
+              ) : (
+                <div>
+                  <img 
+                    src="https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/aceh-venue.jpg" 
+                    alt="Suaka Pernikahan Nusantara" 
+                    class="w-full h-full object-cover"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex flex-col justify-end p-6 pl-8 pb-7 text-white">
+                    <span class="text-[9px] uppercase tracking-widest text-[#d8c2a7] font-semibold mb-1">Featured Sanctuary</span>
+                    <h3 class="font-editorial text-lg sm:text-xl font-semibold leading-tight line-clamp-2">
+                      Kemegahan Sakral Pelaminan Adat & Suaka Nusantara
+                    </h3>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -120,7 +166,7 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
             <div class="shape-collage-tr bg-neutral-200 overflow-hidden h-56 sm:h-72 shadow-lg group relative bento-card border border-white/60">
               <img 
                 src="https://r2.luxima.id/cdn-cgi/image/width=1200,quality=75,format=auto/images/hero/bento-intro.jpg" 
-                alt="Venetian Chandelier & High Ceilings" 
+                alt="Mahakarya Paes Ageng & Melati" 
                 loading="eager"
                 fetchpriority="high"
                 decoding="async"
@@ -135,13 +181,13 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
             <div class="shape-collage-br bg-neutral-200 overflow-hidden h-44 sm:h-52 shadow-md group relative bento-card border border-white/60">
               <img 
                 src="https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/categories/florists.webp" 
-                alt="Vila Heritage Parahyangan Veranda" 
+                alt="Instalasi Ronce Melati & Florist Adat" 
                 loading="lazy"
                 decoding="async"
                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6 px-6 text-center">
-                <span class="text-white text-[11px] font-editorial tracking-wider">Botanical Conservatory</span>
+                <span class="text-white text-[11px] font-editorial tracking-wider">Instalasi Ronce Melati & Florist Adat</span>
               </div>
             </div>
           </div>
@@ -156,19 +202,19 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
       <div class="space-y-2">
         <span class="text-[10px] uppercase tracking-[0.25em] text-[#87693b] font-semibold block">01 / Destinasi Eksotis Nusantara</span>
         <p class="text-xs sm:text-sm text-neutral-600 font-light leading-relaxed">
-          Kurasi editorial terdepan merangkum sakralitas tebing Uluwatu Bali, lembah Menoreh Borobudur, hingga pesiar Phinisi di perairan Labuan Bajo.
+          Kurasi editorial terdepan merangkum sakralitas Rumoh Aceh, tebing Uluwatu Bali, lembah Menoreh Borobudur, hingga pesiar Phinisi di perairan Labuan Bajo.
         </p>
       </div>
       <div class="space-y-2">
         <span class="text-[10px] uppercase tracking-[0.25em] text-[#87693b] font-semibold block">02 / Kriya & Tradisi Adiluhung</span>
         <p class="text-xs sm:text-sm text-neutral-600 font-light leading-relaxed">
-          Mengeksplorasi filosofi mendalam Paes Ageng Kraton, mahkota Siger Sunda, Sunting Emas Minang, serta tenun pusaka Ulos Batak dalam napas kontemporer.
+          Mengeksplorasi filosofi mendalam mahkota Patam Dhoe Aceh, Paes Ageng Kraton, mahkota Siger Sunda, Sunting Emas Minang, serta tenun pusaka Ulos Batak.
         </p>
       </div>
       <div class="space-y-2">
         <span class="text-[10px] uppercase tracking-[0.25em] text-[#87693b] font-semibold block">03 / Haute Couture Pengantin</span>
         <p class="text-xs sm:text-sm text-neutral-600 font-light leading-relaxed">
-          Menghormati dedikasi maestro kebaya sulam tangan, kilau abadi intan Martapura, serta seni instalasi flora ronce melati berkelanjutan.
+          Menghormati dedikasi maestro kebaya sulam tangan kasab emas, kilau abadi intan Martapura, serta seni instalasi flora ronce melati berkelanjutan.
         </p>
       </div>
     </div>
@@ -190,7 +236,7 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
         href="/categories" 
         class="text-xs uppercase tracking-[0.25em] text-[#87693b] hover:text-black font-semibold flex items-center gap-1.5 transition-colors group"
       >
-        <span>View all</span>
+        <span>Lihat Semua Kategori</span>
         <span class="transform group-hover:translate-x-1 transition-transform">→</span>
       </a>
     </div>
@@ -201,12 +247,11 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
     <!-- 3 Cathedral Arch Bento Cards (Exact silhouette from reference image) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
       
-      {archSanctuaries.map((post, idx) => {
-        // Distinct curation metadata for the 3 cathedral arch cards
-        const locationTags = ['Yogyakarta, Jawa Tengah', 'Lembah Menoreh, Borobudur', 'Dataran Tinggi Parahyangan'];
-        const sanctuaryNames = ['Kraton Hadiningrat', 'Pelataran Candi Borobudur', 'Villa Kolonial Lembang'];
-        const tag = locationTags[idx] || 'Bespoke Sanctuary';
-        const sanctuary = sanctuaryNames[idx] || post.title;
+      {archSanctuaries.map((post) => {
+        // Authentically resolved from database tags, title, and category
+        const { tag, sanctuary } = getPostSanctuaryDetails(post);
+        const coverImg = getPostCoverUrl(post.cover_image);
+        const readingTime = post.reading_time_minutes || post.reading_time || 6;
 
         return (
           <article class="bento-arch-card bg-white border border-[#a88857]/25 flex flex-col justify-between group shadow-sm">
@@ -215,7 +260,8 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
               <!-- Arch Dome Image Window -->
               <div class="w-full aspect-[4/5] overflow-hidden relative">
                 <img 
-                  src={post.cover_image || 'https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/bento-community.jpg'} 
+                  src={coverImg}
+                  onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/aceh-venue.jpg';" 
                   alt={post.title} 
                   loading="lazy"
                   decoding="async"
@@ -255,7 +301,7 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
 
                 <div class="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
                   <span class="text-neutral-400 font-light">
-                    {post.reading_time || 6} Menit Baca
+                    {readingTime} Menit Baca
                   </span>
                   <span class="text-[#87693b] font-semibold uppercase tracking-wider group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                     <span>Detail</span>
@@ -293,73 +339,87 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
       
       <!-- Bento Item 1: Large Cathedral Arch Hero Feature (Span 7 cols) -->
-      {bentoPosts[0] && (
-        <div class="md:col-span-7 bento-card shape-arch bg-neutral-900 text-white min-h-[460px] flex flex-col justify-end relative group border border-[#a88857]/30 shadow-md">
-          <img 
-            src={bentoPosts[0].cover_image || 'https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp'} 
-            alt={bentoPosts[0].title}
-            class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 opacity-75"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-          
-          <div class="relative z-10 p-8 sm:p-10">
-            <span class="px-3.5 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold bg-[#a88857] text-white inline-block mb-3">
-              Cover Feature • {bentoPosts[0].category?.name || 'Grand Edition'}
-            </span>
-            <a href={`/blog/${bentoPosts[0].slug}`} class="block">
-              <h3 class="font-editorial text-3xl sm:text-4xl font-semibold leading-tight mb-3 hover:text-[#d8c2a7] transition-colors">
-                {bentoPosts[0].title}
-              </h3>
-            </a>
-            <p class="text-xs sm:text-sm text-neutral-300 font-light line-clamp-2 mb-6 max-w-xl">
-              {bentoPosts[0].description}
-            </p>
-            <div class="flex items-center justify-between text-xs text-neutral-300 border-t border-white/20 pt-4">
-              <span>{bentoPosts[0].author?.fullName || 'Dewan Redaksi LUXIMA'}</span>
-              <a href={`/blog/${bentoPosts[0].slug}`} class="text-[#d8c2a7] font-medium hover:underline inline-flex items-center gap-1">
-                <span>Baca Edisi Penuh</span>
+      {bentoPosts[0] && (() => {
+        const { tag: bentoTag0 } = getPostSanctuaryDetails(bentoPosts[0]);
+        const bentoCover0 = getPostCoverUrl(bentoPosts[0].cover_image, { width: 1400, quality: 80 });
+        return (
+          <div class="md:col-span-7 bento-card shape-arch bg-neutral-900 text-white min-h-[460px] flex flex-col justify-end relative group border border-[#a88857]/30 shadow-md">
+            <img 
+              src={bentoCover0} 
+              alt={bentoPosts[0].title}
+              onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp';"
+              class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 opacity-75"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+            
+            <div class="relative z-10 p-8 sm:p-10">
+              <span class="px-3.5 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold bg-[#a88857] text-white inline-block mb-3">
+                Cover Feature • {bentoTag0}
+              </span>
+              <a href={`/blog/${bentoPosts[0].slug}`} class="block">
+                <h3 class="font-editorial text-3xl sm:text-4xl font-semibold leading-tight mb-3 hover:text-[#d8c2a7] transition-colors">
+                  {bentoPosts[0].title}
+                </h3>
+              </a>
+              <p class="text-xs sm:text-sm text-neutral-300 font-light line-clamp-2 mb-6 max-w-xl">
+                {bentoPosts[0].description}
+              </p>
+              <div class="flex items-center justify-between text-xs text-neutral-300 border-t border-white/20 pt-4">
+                <span>{bentoPosts[0].author?.fullName || 'Dewan Redaksi LUXIMA'}</span>
+                <a href={`/blog/${bentoPosts[0].slug}`} class="text-[#d8c2a7] font-medium hover:underline inline-flex items-center gap-1">
+                  <span>Baca Edisi Penuh</span>
+                  <span>→</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      <!-- Bento Item 2: Dynamic Post (Span 5 cols) -->
+      {bentoPosts[1] && (() => {
+        const { tag: bentoTag1, sanctuary: bentoSanctuary1 } = getPostSanctuaryDetails(bentoPosts[1]);
+        const bentoThumb1 = getPostCoverUrl(bentoPosts[1].cover_image, { width: 300, quality: 75 });
+        return (
+          <div class="md:col-span-5 bento-card shape-leaf-1 bg-white border border-[#a88857]/30 p-8 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+            <div class="absolute -right-8 -top-8 w-40 h-40 bg-[#a88857]/10 rounded-full blur-2xl"></div>
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] uppercase tracking-[0.25em] text-[#87693b] font-semibold">{bentoPosts[1].category?.name || 'Destinasi Adat'}</span>
+                <span class="px-3 py-0.5 rounded-full text-[9px] uppercase tracking-wider bg-[#FAF9F6] border border-[#a88857]/30 text-neutral-600">
+                  {bentoSanctuary1}
+                </span>
+              </div>
+              <a href={`/blog/${bentoPosts[1].slug}`} class="block">
+                <h3 class="font-editorial text-2xl sm:text-3xl text-[#1A1A1A] font-semibold leading-snug mb-3 hover:text-[#a88857] transition-colors">
+                  {bentoPosts[1].title}
+                </h3>
+              </a>
+              <p class="text-xs text-neutral-600 font-light line-clamp-3 leading-relaxed">
+                {bentoPosts[1].description}
+              </p>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-[#a88857]/40 shrink-0">
+                  <img 
+                    src={bentoThumb1} 
+                    alt={bentoPosts[1].title} 
+                    onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=300,quality=75,format=auto/assets/general/ceremony.webp';"
+                    class="w-full h-full object-cover" 
+                  />
+                </div>
+                <span class="text-xs font-editorial text-neutral-700 truncate max-w-[180px]">{bentoTag1}</span>
+              </div>
+              <a href={`/blog/${bentoPosts[1].slug}`} class="text-xs font-semibold text-[#87693b] hover:text-black uppercase tracking-wider inline-flex items-center gap-1">
+                <span>Baca</span>
                 <span>→</span>
               </a>
             </div>
           </div>
-        </div>
-      )}
-
-      <!-- Bento Item 2: Dynamic Post (Span 5 cols) - Phinisi Labuan Bajo -->
-      {bentoPosts[1] ? (
-        <div class="md:col-span-5 bento-card shape-leaf-1 bg-white border border-[#a88857]/30 p-8 flex flex-col justify-between shadow-sm relative overflow-hidden group">
-          <div class="absolute -right-8 -top-8 w-40 h-40 bg-[#a88857]/10 rounded-full blur-2xl"></div>
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-[10px] uppercase tracking-[0.25em] text-[#87693b] font-semibold">{bentoPosts[1].category?.name || 'Destinasi Laut'}</span>
-              <span class="px-3 py-0.5 rounded-full text-[9px] uppercase tracking-wider bg-[#FAF9F6] border border-[#a88857]/30 text-neutral-600">
-                Resepsi Privat
-              </span>
-            </div>
-            <a href={`/blog/${bentoPosts[1].slug}`} class="block">
-              <h3 class="font-editorial text-2xl sm:text-3xl text-[#1A1A1A] font-semibold leading-snug mb-3 hover:text-[#a88857] transition-colors">
-                {bentoPosts[1].title}
-              </h3>
-            </a>
-            <p class="text-xs text-neutral-600 font-light line-clamp-3 leading-relaxed">
-              {bentoPosts[1].description}
-            </p>
-          </div>
-
-          <div class="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full overflow-hidden border border-[#a88857]/40">
-                <img src={bentoPosts[1].cover_image || "https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp"} alt="Thumbnail" class="w-full h-full object-cover" />
-              </div>
-              <span class="text-xs font-editorial text-neutral-700">Labuan Bajo • Flores</span>
-            </div>
-            <a href={`/blog/${bentoPosts[1].slug}`} class="text-xs font-semibold text-[#87693b] hover:text-black uppercase tracking-wider inline-flex items-center gap-1">
-              <span>Baca</span>
-              <span>→</span>
-            </a>
-          </div>
-        </div>
-      ) : null}
+        );
+      })()}
 
       <!-- Bento Item 3: Warm Sand Editorial Manifesto Pill Card (Span 4 cols) -->
       <div class="md:col-span-4 bento-card rounded-3xl bg-[#FAF6F0] border border-[#d8c2a7]/60 p-8 flex flex-col justify-between relative shadow-sm">
@@ -376,68 +436,83 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
         </div>
       </div>
 
-      <!-- Bento Item 4: Dynamic Post (Span 4 cols) - Batavia Dharmawangsa Jakarta -->
-      {bentoPosts[2] ? (
-        <div class="md:col-span-4 bento-card shape-leaf-2 bg-white border border-[#a88857]/30 p-8 flex flex-col justify-between shadow-sm relative group overflow-hidden">
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-[10px] uppercase tracking-[0.25em] text-[#87693b] font-semibold">{bentoPosts[2].category?.name || 'Heritage Batavia'}</span>
-              <span class="text-xs font-editorial text-[#87693b]">Indies Kolonial</span>
+      <!-- Bento Item 4: Dynamic Post (Span 4 cols) -->
+      {bentoPosts[2] && (() => {
+        const { tag: bentoTag2, sanctuary: bentoSanctuary2 } = getPostSanctuaryDetails(bentoPosts[2]);
+        return (
+          <div class="md:col-span-4 bento-card shape-leaf-2 bg-white border border-[#a88857]/30 p-8 flex flex-col justify-between shadow-sm relative group overflow-hidden">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] uppercase tracking-[0.25em] text-[#87693b] font-semibold">{bentoPosts[2].category?.name || 'Heritage Adat'}</span>
+                <span class="text-xs font-editorial text-[#87693b] truncate max-w-[140px]">{bentoTag2}</span>
+              </div>
+              <a href={`/blog/${bentoPosts[2].slug}`} class="block">
+                <h3 class="font-editorial text-2xl text-[#1A1A1A] font-semibold leading-snug mb-2 hover:text-[#a88857] transition-colors">
+                  {bentoPosts[2].title}
+                </h3>
+              </a>
+              <p class="text-xs text-neutral-600 font-light line-clamp-3 leading-relaxed">
+                {bentoPosts[2].description}
+              </p>
             </div>
-            <a href={`/blog/${bentoPosts[2].slug}`} class="block">
-              <h3 class="font-editorial text-2xl text-[#1A1A1A] font-semibold leading-snug mb-2 hover:text-[#a88857] transition-colors">
-                {bentoPosts[2].title}
-              </h3>
-            </a>
-            <p class="text-xs text-neutral-600 font-light line-clamp-3 leading-relaxed">
-              {bentoPosts[2].description}
-            </p>
+            <div class="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs">
+              <span class="text-neutral-400 font-light">{bentoPosts[2].reading_time_minutes || 6} Menit Baca</span>
+              <a href={`/blog/${bentoPosts[2].slug}`} class="text-[#87693b] font-semibold hover:underline inline-flex items-center gap-1">
+                <span>Eksplorasi</span>
+                <span>→</span>
+              </a>
+            </div>
           </div>
-          <div class="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs">
-            <span class="text-neutral-400 font-light">{bentoPosts[2].reading_time_minutes || 6} Menit Baca</span>
-            <a href={`/blog/${bentoPosts[2].slug}`} class="text-[#87693b] font-semibold hover:underline inline-flex items-center gap-1">
-              <span>Eksplorasi</span>
-              <span>→</span>
-            </a>
-          </div>
-        </div>
-      ) : null}
+        );
+      })()}
 
-      <!-- Bento Item 5: Dynamic Post (Span 4 cols) - Haute Couture Kebaya Modern -->
-      {bentoPosts[3] ? (
-        <div class="md:col-span-4 bento-card rounded-3xl bg-[#1A1A1A] text-white p-8 flex flex-col justify-between shadow-md relative overflow-hidden group">
-          <div class="flex items-center justify-between">
-            <span class="font-editorial text-3xl font-semibold tracking-wider text-[#d8c2a7]">HAUTE COUTURE</span>
-            <span class="px-3 py-1 rounded-full text-[9px] uppercase tracking-widest font-semibold bg-[#a88857] text-white">
-              Adi Busana
-            </span>
+      <!-- Bento Item 5: Dynamic Post (Span 4 cols - Dark Luxury Card) -->
+      {bentoPosts[3] && (() => {
+        const { tag: bentoTag3 } = getPostSanctuaryDetails(bentoPosts[3]);
+        const bentoCover3 = getPostCoverUrl(bentoPosts[3].cover_image, { width: 800, quality: 75 });
+        return (
+          <div class="md:col-span-4 bento-card rounded-3xl bg-[#1A1A1A] text-white p-8 flex flex-col justify-between shadow-md relative overflow-hidden group">
+            <img 
+              src={bentoCover3} 
+              alt={bentoPosts[3].title}
+              class="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:scale-105 transition-transform duration-700" 
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
+
+            <div class="relative z-10 flex items-center justify-between">
+              <span class="font-editorial text-2xl font-semibold tracking-wider text-[#d8c2a7]">
+                {bentoPosts[3].category?.name ? bentoPosts[3].category.name.toUpperCase() : 'HAUTE COUTURE'}
+              </span>
+              <span class="px-3 py-1 rounded-full text-[9px] uppercase tracking-widest font-semibold bg-[#a88857] text-white">
+                {bentoTag3}
+              </span>
+            </div>
+            <div class="relative z-10 my-6">
+              <a href={`/blog/${bentoPosts[3].slug}`} class="block">
+                <h3 class="font-editorial text-2xl font-semibold text-white leading-snug mb-2 group-hover:text-[#d8c2a7] transition-colors">
+                  {bentoPosts[3].title}
+                </h3>
+              </a>
+              <p class="text-xs font-light text-neutral-300 line-clamp-2 leading-relaxed">
+                {bentoPosts[3].description}
+              </p>
+            </div>
+            <div class="relative z-10 pt-4 border-t border-white/15 flex items-center justify-between text-xs">
+              <span class="text-neutral-400">{bentoPosts[3].category?.name || 'Busana & Kriya'}</span>
+              <a href={`/blog/${bentoPosts[3].slug}`} class="text-[#d8c2a7] font-medium hover:underline inline-flex items-center gap-1">
+                <span>Baca Cerita</span>
+                <span>→</span>
+              </a>
+            </div>
           </div>
-          <div class="my-6">
-            <a href={`/blog/${bentoPosts[3].slug}`} class="block">
-              <h3 class="font-editorial text-2xl font-semibold text-white leading-snug mb-2 group-hover:text-[#d8c2a7] transition-colors">
-                {bentoPosts[3].title}
-              </h3>
-            </a>
-            <p class="text-xs font-light text-neutral-300 line-clamp-2 leading-relaxed">
-              {bentoPosts[3].description}
-            </p>
-          </div>
-          <div class="pt-4 border-t border-white/15 flex items-center justify-between text-xs">
-            <span class="text-neutral-400">{bentoPosts[3].category?.name || 'Busana & Gaun'}</span>
-            <a href={`/blog/${bentoPosts[3].slug}`} class="text-[#d8c2a7] font-medium hover:underline inline-flex items-center gap-1">
-              <span>Baca Cerita</span>
-              <span>→</span>
-            </a>
-          </div>
-        </div>
-      ) : null}
+        );
+      })()}
 
     </div>
 
   </section>
 
-  
-  <!-- SECTION: WARTA & RAGAM KRIYA PERNIKAHAN NUSANTARA (Posts 9 to 12) -->
+  <!-- SECTION: WARTA & RAGAM KRIYA PERNIKAHAN NUSANTARA -->
   {additionalEditorials.length > 0 && (
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24 relative z-10">
       <div class="flex items-end justify-between mb-8 pb-4 border-b border-[#a88857]/20">
@@ -448,49 +523,59 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
           </h2>
         </div>
         <a href="/blog" class="text-xs uppercase tracking-wider text-[#87693b] hover:text-black font-semibold flex items-center gap-1 transition-colors">
-          <span>Semua 12 Cerita</span>
+          <span>Semua {totalPosts || posts?.length || 16} Cerita</span>
           <span>→</span>
         </a>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {additionalEditorials.map((post) => (
-          <article class="bento-card rounded-2xl bg-white border border-[#a88857]/25 overflow-hidden flex flex-col justify-between group shadow-sm">
-            <a href={`/blog/${post.slug}`} class="block flex-1 flex flex-col">
-              <div class="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  src={post.cover_image || 'https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp'} 
-                  alt={post.title}
-                  loading="lazy"
-                  decoding="async"
-                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
-                />
-                <div class="absolute top-3 left-3 z-10">
-                  <span class="px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold bg-white/95 backdrop-blur-md text-[#87693b] shadow-xs">
-                    {post.category?.name || 'Kriya Adat'}
-                  </span>
+        {additionalEditorials.map((post) => {
+          const { tag: postLocation } = getPostSanctuaryDetails(post);
+          const coverImg = getPostCoverUrl(post.cover_image, { width: 800, quality: 75 });
+          const readingTime = post.reading_time_minutes || post.reading_time || 7;
+
+          return (
+            <article class="bento-card rounded-2xl bg-white border border-[#a88857]/25 overflow-hidden flex flex-col justify-between group shadow-sm">
+              <a href={`/blog/${post.slug}`} class="block flex-1 flex flex-col">
+                <div class="aspect-[4/3] overflow-hidden relative">
+                  <img 
+                    src={coverImg} 
+                    alt={post.title}
+                    loading="lazy"
+                    decoding="async"
+                    onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp';"
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
+                  />
+                  <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-semibold bg-white/95 backdrop-blur-md text-[#87693b] shadow-xs">
+                      {post.category?.name || 'Kriya Adat'}
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-[8px] uppercase tracking-wider bg-black/70 backdrop-blur-md text-white">
+                      {postLocation}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div class="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <span class="text-[9px] uppercase tracking-widest text-neutral-400 font-light block mb-1.5">
-                    {post.reading_time_minutes || 7} Menit Baca
-                  </span>
-                  <h3 class="font-editorial text-xl font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors leading-snug">
-                    {post.title}
-                  </h3>
-                  <p class="text-xs text-neutral-500 font-light mt-2 line-clamp-2 leading-relaxed">
-                    {post.description}
-                  </p>
+                <div class="p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span class="text-[9px] uppercase tracking-widest text-neutral-400 font-light block mb-1.5">
+                      {readingTime} Menit Baca
+                    </span>
+                    <h3 class="font-editorial text-xl font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors leading-snug">
+                      {post.title}
+                    </h3>
+                    <p class="text-xs text-neutral-500 font-light mt-2 line-clamp-2 leading-relaxed">
+                      {post.description}
+                    </p>
+                  </div>
+                  <div class="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-semibold text-[#87693b] mt-4">
+                    <span>Baca Ulasan</span>
+                    <span class="transform group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
                 </div>
-                <div class="pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-semibold text-[#87693b] mt-4">
-                  <span>Baca Ulasan</span>
-                  <span class="transform group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-              </div>
-            </a>
-          </article>
-        ))}
+              </a>
+            </article>
+          );
+        })}
       </div>
     </section>
   )}
@@ -500,7 +585,7 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
     <div class="flex items-center justify-between mb-6 pb-2 border-b border-[#a88857]/20">
       <span class="text-xs uppercase tracking-[0.25em] text-[#87693b] font-semibold">Arsip Menurut Topik</span>
       <a href="/categories" class="text-xs uppercase tracking-wider text-[#87693b] hover:text-black font-semibold">
-        Lihat Semua Kategori →
+        Lihat Semua Kategori ({categories ? categories.length : 22}) →
       </a>
     </div>
 
@@ -511,15 +596,16 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
       {categories && categories.map(cat => (
         <a 
           href={`/category/${cat.slug}`} 
-          class="whitespace-nowrap px-6 py-2.5 rounded-full text-xs font-medium uppercase tracking-wider bg-white text-neutral-700 hover:bg-[#a88857]/10 hover:border-[#a88857] transition-all border border-[#a88857]/30 shadow-sm"
+          class="whitespace-nowrap px-6 py-2.5 rounded-full text-xs font-medium uppercase tracking-wider bg-white text-neutral-700 hover:bg-[#a88857]/10 hover:border-[#a88857] transition-all border border-[#a88857]/30 shadow-sm flex items-center gap-1.5"
         >
-          {cat.name}
+          {cat.icon && <span class="text-xs">{cat.icon}</span>}
+          <span>{cat.name}</span>
         </a>
       ))}
     </div>
   </section>
 
-  <!-- VISUAL MOODBOARD / LOOKBOOK GALLERY -->
+  <!-- VISUAL MOODBOARD / LOOKBOOK GALLERY (Directly linked to real editorial stories) -->
   <section class="bg-[#F5F2EB] py-20 border-y border-[#a88857]/20 mb-20 relative overflow-hidden">
     <BotanicalPetal color="sage" size={260} rotate={15} opacity="0.3" class="absolute -top-16 -left-16 petal-float" />
     <BotanicalPetal color="sand" size={220} rotate={-25} opacity="0.35" class="absolute -bottom-16 -right-16 petal-float-rev" />
@@ -529,35 +615,62 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
         <span class="text-xs uppercase tracking-[0.3em] text-[#87693b] font-semibold">Visual Lookbook</span>
         <h2 class="font-editorial text-4xl md:text-5xl text-[#1A1A1A] font-semibold mt-2">The Bridal Aesthetics</h2>
         <p class="text-sm text-neutral-600 font-light mt-3 leading-relaxed">
-          Kompilasi keindahan visual dari berbagai upacara adat sakral, detail kebaya haute couture, hingga suaka pernikahan paling memesona di seluruh penjuru Indonesia.
+          Kompilasi keindahan visual dari berbagai upacara adat sakral, detail kebaya haute couture, hingga suaka pernikahan paling memesona di seluruh penjuru Nusantara.
         </p>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card">
-          <img src="https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/aceh-venue.jpg" alt="Bridal Couture" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" />
-          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <span class="text-white text-xs font-editorial tracking-wider">Kebaya Kutubaru Couture • Parahyangan</span>
+        <a href="/category/attire-gowns" class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card block">
+          <img 
+            src="https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/aceh-venue.jpg" 
+            alt="Kebaya & Busana Kerajaan Aceh" 
+            loading="lazy"
+            decoding="async"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" 
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+            <span class="text-white text-xs font-editorial tracking-wider">Busana Adat &amp; Kasab Emas • Serambi Mekkah</span>
           </div>
-        </div>
-        <div class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card">
-          <img src="https://r2.luxima.id/cdn-cgi/image/width=1200,quality=75,format=auto/images/hero/bento-intro.jpg" alt="Floral Art" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" />
-          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <span class="text-white text-xs font-editorial tracking-wider">Instalasi Ronce Melati & Janur Tropis</span>
+        </a>
+
+        <a href="/category/floral-botanicals" class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card block">
+          <img 
+            src="https://r2.luxima.id/cdn-cgi/image/width=1200,quality=75,format=auto/images/hero/bento-intro.jpg" 
+            alt="Floral Art" 
+            loading="lazy"
+            decoding="async"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" 
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+            <span class="text-white text-xs font-editorial tracking-wider">Instalasi Ronce Melati &amp; Janur Tropis</span>
           </div>
-        </div>
-        <div class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card">
-          <img src="https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp" alt="Grand Ballroom" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" />
-          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <span class="text-white text-xs font-editorial tracking-wider">Resepsi Keraton Joglo & Gebyok Jati</span>
+        </a>
+
+        <a href="/category/venues" class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card block">
+          <img 
+            src="https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp" 
+            alt="Grand Ballroom" 
+            loading="lazy"
+            decoding="async"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" 
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+            <span class="text-white text-xs font-editorial tracking-wider">Resepsi Keraton Joglo &amp; Gebyok Jati</span>
           </div>
-        </div>
-        <div class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card">
-          <img src="https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/bento-community.jpg" alt="Fine Jewelry" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" />
-          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <span class="text-white text-xs font-editorial tracking-wider">Intan Martapura & Kriya Filigri Kotagede</span>
+        </a>
+
+        <a href="/category/ring-jewelry" class="img-zoom-container rounded-2xl overflow-hidden h-72 shadow-md relative group bento-card block">
+          <img 
+            src="https://r2.luxima.id/cdn-cgi/image/width=1920,quality=75,format=auto/images/hero/bento-community.jpg" 
+            alt="Fine Jewelry" 
+            loading="lazy"
+            decoding="async"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108" 
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+            <span class="text-white text-xs font-editorial tracking-wider">Intan Martapura &amp; Kriya Filigri Kotagede</span>
           </div>
-        </div>
+        </a>
       </div>
     </div>
   </section>
@@ -569,7 +682,7 @@ const additionalEditorials = posts && posts.length > 8 ? posts.slice(8, 12) : []
       <span class="text-xs uppercase tracking-[0.3em] text-[#87693b] font-semibold">Privileged Access</span>
       <h2 class="font-editorial text-3xl sm:text-4xl text-[#1A1A1A] font-semibold mt-2">The Connoisseurs Circle</h2>
       <p class="text-sm text-neutral-600 font-light mt-3 max-w-lg mx-auto leading-relaxed">
-        Dapatkan edisi digital eksklusif LUXIMA Magazine, rekomendasi privat venue dunia, dan undangan peragaan busana pengantin couture langsung di inbox Anda.
+        Dapatkan edisi digital eksklusif LUXIMA Magazine, rekomendasi privat venue Nusantara, dan ulasan mahakarya kriya pengantin langsung di kotak masuk Anda.
       </p>
       <form onsubmit="event.preventDefault(); window.showToast('Terima kasih! Anda kini terdaftar di The Connoisseurs Circle.', 'success'); this.reset();" class="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto relative z-10">
         <input type="email" required placeholder="Masukkan alamat email Anda..." class="flex-1 bg-white border border-[#a88857]/30 rounded-full px-5 py-3 text-xs focus:outline-none focus:border-[#a88857] transition-all shadow-inner" />

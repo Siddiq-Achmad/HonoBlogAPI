@@ -1,11 +1,15 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { supabaseAdmin } from "../../lib/supabase.js";
+import { supabaseAdmin, supabase } from "../../lib/supabase.js";
+import { getPostCoverUrl, getUserAvatarUrl } from "../../lib/images.js";
+import { getPostSanctuaryDetails } from "../../lib/sanctuary.js";
 
 const { slug } = Astro.params;
 
+const client = supabaseAdmin || supabase;
+
 // Fetch current post
-const { data: post, error } = await supabaseAdmin
+const { data: post, error } = await client
   .from("posts")
   .select(
     "*, author:profiles_view(id, fullName, avatar), category:categories(id, name, slug)",
@@ -17,16 +21,16 @@ if (!post || error) {
   return Astro.redirect("/");
 }
 
-// Fetch related posts from same category
-const { data: relatedPosts } = await supabaseAdmin
+// Fetch related posts from same category or recent
+const { data: relatedPosts } = await client
   .from("posts")
-  .select("*, category:categories(name)")
+  .select("*, category:categories(name, slug)")
   .eq("category_id", post.category_id)
   .neq("id", post.id)
   .limit(3);
 
 // Fetch comments with author profile
-const { data: comments } = await supabaseAdmin
+const { data: comments } = await client
   .from("comments")
   .select("*, user:profiles_view(id, fullName, avatar)")
   .eq("post_id", post.id)
@@ -40,8 +44,11 @@ const remainingParagraphs = paragraphs.slice(1);
 
 const canonicalUrl = new URL(Astro.url.pathname, "https://blog.luxima.id").href;
 
-const authorAvatar = post.author?.avatar || "/assets/avatar-fallback.svg";
+const authorAvatar = getUserAvatarUrl(post.author?.avatar);
 const authorName = post.author?.fullName || "Siddiq Achmad";
+
+const postCoverUrl = getPostCoverUrl(post.cover_image, { width: 1200, quality: 75 });
+const sanctuaryDetails = getPostSanctuaryDetails(post);
 
 // Article & BreadcrumbList Schema for Google Rich Results, Perplexity, & AEO
 const articleSchema = {
@@ -53,15 +60,12 @@ const articleSchema = {
   },
   headline: post.title,
   description: post.description,
-  image: [
-    post.cover_image ||
-      "https://r2.luxima.id/cdn-cgi/image/width=480,quality=75,format=auto/assets/general/ceremony.webp",
-  ],
+  image: [postCoverUrl],
   datePublished: post.created_at,
   dateModified: post.updated_at || post.created_at,
   author: {
     "@type": "Person",
-    name: post.author?.fullName || "Dewan Redaksi LUXIMA",
+    name: authorName,
   },
   publisher: {
     "@type": "Organization",
@@ -104,7 +108,7 @@ const breadcrumbSchema = {
 <Layout
   title={`${post.title} — LUXIMA MAGAZINE`}
   description={post.description}
-  ogImage={post.cover_image}
+  ogImage={postCoverUrl}
   activeNav="home"
 >
   <!-- JSON-LD Structured Data for Article & Breadcrumbs (AEO / GEO) -->
@@ -135,11 +139,23 @@ const breadcrumbSchema = {
 
     <!-- Article Header -->
     <header class="mb-10 text-center">
-      <span
-        class="inline-block px-4 py-1 rounded-full text-xs font-medium uppercase tracking-widest bg-[#a88857]/10 text-[#87693b] border border-[#a88857]/30 mb-4"
-      >
-        {post.category?.name || "WEDDING EDITORIAL"}
-      </span>
+      <div class="flex items-center justify-center gap-2 mb-4">
+        <span
+          class="inline-block px-4 py-1 rounded-full text-xs font-medium uppercase tracking-widest bg-[#a88857]/10 text-[#87693b] border border-[#a88857]/30"
+        >
+          {post.category?.name || "WEDDING EDITORIAL"}
+        </span>
+        <span
+          class="inline-block px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider bg-black/5 text-neutral-600 border border-neutral-200"
+        >
+          {sanctuaryDetails.tag}
+        </span>
+      </div>
+
+      <div class="text-[11px] uppercase tracking-[0.25em] text-[#a88857] font-semibold mb-2">
+        {sanctuaryDetails.sanctuary}
+      </div>
+
       <h1
         class="font-editorial text-3xl sm:text-5xl md:text-6xl text-[#1A1A1A] font-semibold leading-[1.15] mb-6"
       >
@@ -153,7 +169,7 @@ const breadcrumbSchema = {
 
       <!-- Author, Date, Reading Time -->
       <div
-        class="flex items-center justify-center gap-6 text-xs text-neutral-500 font-light border-y border-[#a88857]/20 py-4"
+        class="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-neutral-500 font-light border-y border-[#a88857]/20 py-4"
       >
         <div class="flex items-center gap-2.5">
           <img
@@ -177,25 +193,26 @@ const breadcrumbSchema = {
         <span>•</span>
         <span>{post.reading_time || 5} Menit Baca</span>
         <span>•</span>
-        <span>{post.views || 0} Views</span>
+        <span>{post.views || 0} Pembaca</span>
       </div>
     </header>
 
     <!-- Cover Image -->
     <div class="rounded-3xl overflow-hidden shadow-2xl mb-12 relative">
       <img
-        src={post.cover_image ||
-          "https://r2.luxima.id/cdn-cgi/image/width=1080,quality=75,format=auto/assets/general/ceremony.webp"}
+        src={postCoverUrl}
         alt={post.title}
         loading="eager"
         fetchpriority="high"
         decoding="async"
+        onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=1200,quality=75,format=auto/images/hero/aceh-venue.jpg';"
         class="w-full h-auto max-h-[550px] object-cover"
       />
       <div
-        class="bg-white/80 backdrop-blur-md p-3 text-right text-[11px] text-neutral-500 font-light"
+        class="bg-white/80 backdrop-blur-md p-3 flex items-center justify-between text-[11px] text-neutral-500 font-light"
       >
-        Dokumentasi Editorial LUXIMA Wedding Magazine
+        <span>{sanctuaryDetails.sanctuary}</span>
+        <span>Dokumentasi Editorial LUXIMA Wedding Magazine</span>
       </div>
     </div>
 
@@ -210,7 +227,7 @@ const breadcrumbSchema = {
         >
         <button
           onclick={`window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(document.title + ' ' + window.location.href), '_blank')`}
-          class="p-2 rounded-full hover:bg-[#a88857]/10 text-neutral-700 transition-colors"
+          class="p-2 rounded-full hover:bg-[#a88857]/10 text-neutral-700 transition-colors cursor-pointer"
           title="WhatsApp"
         >
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"
@@ -221,7 +238,7 @@ const breadcrumbSchema = {
         </button>
         <button
           onclick={`window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(document.title) + '&url=' + encodeURIComponent(window.location.href), '_blank')`}
-          class="p-2 rounded-full hover:bg-[#a88857]/10 text-neutral-700 transition-colors"
+          class="p-2 rounded-full hover:bg-[#a88857]/10 text-neutral-700 transition-colors cursor-pointer"
           title="X / Twitter"
         >
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"
@@ -232,7 +249,7 @@ const breadcrumbSchema = {
         </button>
         <button
           onclick="navigator.clipboard.writeText(window.location.href).then(() => showToast('Tautan artikel berhasil disalin!', 'success'))"
-          class="p-2 rounded-full hover:bg-[#a88857]/10 text-neutral-700 transition-colors"
+          class="p-2 rounded-full hover:bg-[#a88857]/10 text-neutral-700 transition-colors cursor-pointer"
           title="Salin Tautan"
         >
           <svg
@@ -367,33 +384,38 @@ const breadcrumbSchema = {
             </h3>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {relatedPosts.map((rel) => (
-              <a
-                href={`/blog/${rel.slug}`}
-                class="glass-card rounded-2xl overflow-hidden group"
-              >
-                <div class="aspect-[16/10] overflow-hidden">
-                  <img
-                    src={
-                      rel.cover_image ||
-                      "https://images.unsplash.com/photo-1519741497674-611481863552?w=600"
-                    }
-                    alt={rel.title}
-                    loading="lazy"
-                    decoding="async"
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
-                <div class="p-5">
-                  <span class="text-[9px] uppercase tracking-wider text-[#a88857] font-semibold">
-                    {rel.category?.name}
-                  </span>
-                  <h4 class="font-editorial text-lg font-semibold text-[#1A1A1A] mt-1 group-hover:text-[#a88857] transition-colors line-clamp-2">
-                    {rel.title}
-                  </h4>
-                </div>
-              </a>
-            ))}
+            {relatedPosts.map((rel) => {
+              const relCover = getPostCoverUrl(rel.cover_image, { width: 600, quality: 75 });
+              const relSanctuary = getPostSanctuaryDetails(rel);
+              return (
+                <a
+                  href={`/blog/${rel.slug}`}
+                  class="glass-card rounded-2xl overflow-hidden group bg-white border border-[#a88857]/20 hover:border-[#a88857]/50 hover:shadow-xl transition-all duration-500"
+                >
+                  <div class="aspect-[16/10] overflow-hidden relative">
+                    <img
+                      src={relCover}
+                      alt={rel.title}
+                      loading="lazy"
+                      decoding="async"
+                      onerror="this.onerror=null; this.src='https://r2.luxima.id/cdn-cgi/image/width=800,quality=75,format=auto/images/hero/aceh-venue.jpg';"
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div class="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[8px] uppercase tracking-widest text-[#d8c2a7] font-semibold">
+                      {relSanctuary.tag}
+                    </div>
+                  </div>
+                  <div class="p-5">
+                    <span class="text-[9px] uppercase tracking-wider text-[#a88857] font-semibold block mb-1">
+                      {relSanctuary.sanctuary}
+                    </span>
+                    <h4 class="font-editorial text-lg font-semibold text-[#1A1A1A] group-hover:text-[#a88857] transition-colors line-clamp-2 leading-snug">
+                      {rel.title}
+                    </h4>
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </section>
       )
@@ -465,12 +487,11 @@ const breadcrumbSchema = {
         {
           comments && comments.length > 0 ? (
             comments.map((c) => {
-              const commentAvatar =
-                c.user?.avatar || "/assets/avatar-fallback.svg";
+              const commentAvatar = getUserAvatarUrl(c.user?.avatar);
               const commenterName =
                 c.user?.fullName || c.author_name || "Pembaca";
               return (
-                <div class="glass-card rounded-xl p-4 flex gap-3.5 items-start">
+                <div class="glass-card rounded-xl p-4 flex gap-3.5 items-start bg-white border border-[#a88857]/20">
                   <img
                     src={commentAvatar}
                     alt={commenterName}
