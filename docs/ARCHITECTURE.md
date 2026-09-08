@@ -47,7 +47,8 @@ Dokumen arsitektur teknis menyeluruh untuk **LUXIMA Magazine & Blog**, merinci i
 ### Mengapa Model Hybrid?
 1. **Performa SEO & Core Web Vitals Maksimal**: Astro menghasilkan dokumen HTML utuh dari sisi server untuk halaman editorial, menjamin skor LCP (Largest Contentful Paint) < 1.2s dan CLS = 0.
 2. **REST API yang Fleksibel**: Daripada mengisolasi backend ke port terpisah, seluruh rute API Hono dimount langsung di dalam Astro melalui catch-all endpoint `src/pages/api/[...path].ts`.
-3. **Satu Port untuk Seluruh Layanan**: Aplikasi berjalan di satu port tunggal (`3000`), mempermudah proses deployment container di Coolify, Docker, atau VPS pribadi tanpa kebutuhan reverse proxy yang rumit.
+3. **Satu Port untuk Seluruh Layanan**: Aplikasi berjalan di satu port tunggal (port `4321` di dev lokal, port `3000` di container produksi Coolify di bawah subdomain `blog.luxima.id`), mempermudah proses deployment tanpa kebutuhan reverse proxy rumit.
+
 
 ### Cara Kerja Bridge (`src/pages/api/[...path].ts`)
 Astro SSR menyediakan fungsi `ALL`: 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { getPostSanctuaryDetails } from './sanctuary.ts';
+import { getPostSanctuaryDetails } from './sanctuary.js';
 
 describe('Sanctuary & Location Resolver', () => {
   it('should resolve Aceh Puade venue accurately', () => {
