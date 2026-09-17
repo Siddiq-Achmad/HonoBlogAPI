@@ -29,3 +29,6 @@ coverage/
 
 # Astro build & cache
 .astro/
+
+# Graphify generated knowledge graph
+graphify-out/
