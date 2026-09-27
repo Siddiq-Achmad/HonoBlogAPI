@@ -130,8 +130,12 @@ api.get('/health', async (c) => {
 
 // Sitemap Generator
 api.get('/sitemap.xml', async (c) => {
-  // Use caching for sitemap
-  const cacheKey = 'sitemap:xml'
+  const host = c.req.header('x-forwarded-host') || c.req.header('host') || '';
+  const proto = c.req.header('x-forwarded-proto') || 'https';
+  const baseUrl = host ? `${proto}://${host}` : (process.env.BASE_URL || 'https://blog.luxima.id');
+
+  // Use dynamic domain-isolated caching for sitemap
+  const cacheKey = `sitemap:xml:${baseUrl}`
   const cachedSitemap = await getCache<string>(cacheKey)
   if (cachedSitemap) {
     c.header('Content-Type', 'application/xml')
@@ -154,7 +158,6 @@ api.get('/sitemap.xml', async (c) => {
       }
     });
 
-  const baseUrl = process.env.BASE_URL || 'https://blog.luxima.id'
   const postUrls = (posts || []).map(p => `
     <url>
       <loc>${baseUrl}/blog/${escapeXml(p.slug)}</loc>
@@ -190,7 +193,9 @@ api.get('/sitemap.xml', async (c) => {
 
 // Robots.txt
 api.get('/robots.txt', (c) => {
-  const baseUrl = process.env.BASE_URL || 'https://blog.luxima.id'
+  const host = c.req.header('x-forwarded-host') || c.req.header('host') || '';
+  const proto = c.req.header('x-forwarded-proto') || 'https';
+  const baseUrl = host ? `${proto}://${host}` : (process.env.BASE_URL || 'https://blog.luxima.id');
   const robots = `
 User-agent: *
 Allow: /
