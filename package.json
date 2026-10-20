@@ -1,6 +1,6 @@
 {
   "name": "hono-blog-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A production-ready Blog REST API built with Hono and Supabase",
   "type": "module",
   "scripts": {
