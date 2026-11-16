@@ -5,6 +5,15 @@ All notable changes to the **luxima-blog** (Hono Blog API & Sanctuary Portal) wi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-11-16
+
+### Added & Synchronized
+- **Ecosystem Cross-Domain Integration**:
+  - Synchronized publication routing for multi-tenant articles across `blog.luxima.id` and `blog.awedz.id`.
+  - Added support for AWEDZ Client Readiness Portal publication announcements and system status links to `status.luxima.id`.
+
+---
+
 ## [1.1.0] - 2026-10-20
 
 ### Added
